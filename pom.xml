@@ -32,5 +32,11 @@
     <!--        <artifactId>cassandra-driver-extras</artifactId>-->
     <!--        <version>3.11.0</version>-->
     <!--    </dependency>-->
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.slf4j/slf4j-nop &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.cassandraunit</groupId>-->
+<!--            <artifactId>cassandra-unit</artifactId>-->
+<!--            <version>3.0.0.1</version>-->
+<!--        </dependency>-->
     </dependencies>
 </project>
