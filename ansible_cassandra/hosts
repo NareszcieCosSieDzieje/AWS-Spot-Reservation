@@ -1,0 +1,5 @@
+[cassandra]
+cassandra-1 ansible_ssh_user=ubuntu
+cassandra-2 ansible_ssh_user=ubuntu
+cassandra-3 ansible_ssh_user=ubuntu
+

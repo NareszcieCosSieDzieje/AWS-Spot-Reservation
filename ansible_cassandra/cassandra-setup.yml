@@ -1,0 +1,57 @@
+---
+- hosts: cassandra
+  become: yes
+  become_user: root
+
+  tasks:
+      #- name: say_hello
+      #      command: /bin/echo "Yes its working $(hostname)"
+      #      register: hello
+      # - debug: msg="{{ hello.stdout }}"
+      # - debug: msg="{{ hello.stderr }}"
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+    - name: Install openjdk
+      apt:
+        name: openjdk-8-jdk
+        state: present
+    - name: Install apt transport https
+      apt:
+        name: apt-transport-https
+        state: present
+    - name: Add cassandra keys to apt
+      apt_key:
+        url: https://www.apache.org/dist/cassandra/KEYS
+        state: present
+    - name: Add cassandra repository to apt
+      apt_repository:
+        repo: deb http://www.apache.org/dist/cassandra/debian 40x main
+        state: present
+    - name: Install cassandra
+      apt:
+        name: cassandra
+        state: present
+    - name: Copy cassandra.yaml
+      copy:
+        src: /home/ubuntu/ansible_cassandra/cassandra.yaml
+        dest: /etc/cassandra/cassandra.yaml
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Start cassandra service
+      service:
+        name: cassandra
+        state: started
+    - name: Check nodetool status
+      command: /usr/bin/nodetool status
+      register: nodetool_status
+    - debug: msg="{{nodetool_status.stdout}}"
+     # apt update
+      # apt install openjdk-8-jdk -y
+      # 
+
+#    - name: install_cassandra
+#      apt: name=cassandra update_cache=yes state=latest
+
