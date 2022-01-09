@@ -1,9 +1,9 @@
 package models;
 
-import com.datastax.driver.mapping.annotations.ClusteringColumn;
-import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Table;
+import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
+import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 /*
  * ascii      boolean    decimal    float      int        set        time       tinyint    varint
@@ -19,24 +19,63 @@ import com.datastax.driver.mapping.annotations.Table;
  */
 
 
-@Table(keyspace = "aws", name = "ec2_instance",
-    caseSensitiveKeyspace = false,
-    caseSensitiveTable = false)
+@Entity(defaultKeyspace = "aws")
+@CqlName(value = "ec2_instance")
 public class EC2Instance {
     @PartitionKey
-    @Column(name = "instance_type")
+    @CqlName(value = "instance_type")
     private String instance_type;
 
     @ClusteringColumn
-    @Column(name = "family")
+    @CqlName(value = "family")
     private String family;
 
-    @Column(name = "vcpu_cores")
+    @CqlName(value = "vcpu_cores")
     private int vcpu_cores;
 
-    @Column(name = "memory_size")
+    @CqlName(value = "memory_size")
     private int memory_size;
 
-    @Column(name = "network_performance")
+    @CqlName(value = "network_performance")
     private String network_performance;
+
+    public String getInstance_type() {
+        return instance_type;
+    }
+
+    public void setInstance_type(String instance_type) {
+        this.instance_type = instance_type;
+    }
+
+    public String getFamily() {
+        return family;
+    }
+
+    public void setFamily(String family) {
+        this.family = family;
+    }
+
+    public int getVcpu_cores() {
+        return vcpu_cores;
+    }
+
+    public void setVcpu_cores(int vcpu_cores) {
+        this.vcpu_cores = vcpu_cores;
+    }
+
+    public int getMemory_size() {
+        return memory_size;
+    }
+
+    public void setMemory_size(int memory_size) {
+        this.memory_size = memory_size;
+    }
+
+    public String getNetwork_performance() {
+        return network_performance;
+    }
+
+    public void setNetwork_performance(String network_performance) {
+        this.network_performance = network_performance;
+    }
 }

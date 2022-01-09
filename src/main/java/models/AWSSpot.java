@@ -12,28 +12,63 @@ package models;
  *   max_price decimal, CC # how much are you willing to pay to keep running instance
  */
 
-import com.datastax.driver.mapping.annotations.ClusteringColumn;
-import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Table;
+import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
+import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
-@Table(keyspace = "aws", name = "aws_spot",
-        caseSensitiveKeyspace = false,
-        caseSensitiveTable = false)
+//@Entity(keyspace = "aws", name = "aws_spot",
+//        caseSensitiveKeyspace = false,
+//        caseSensitiveTable = false)
+@Entity(defaultKeyspace = "aws")
+@CqlName(value = "aws_spot")
 public class AWSSpot {
-    @PartitionKey(0)
-    @Column(name = "region")
+
+    @PartitionKey
+    @CqlName(value = "region")
     private String region;
 
     @PartitionKey(1)
-    @Column(name = "az_name")
+    @CqlName(value = "az_name")
     private String az_name;
 
     @PartitionKey(2)
-    @Column(name = "instance_type")
+    @CqlName(value = "instance_type")
     private String instance_type; //fixme ascii
 
     @ClusteringColumn
-    @Column(name = "max_price")
+    @CqlName(value = "max_price")
     private Float max_price;
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getAz_name() {
+        return az_name;
+    }
+
+    public void setAz_name(String az_name) {
+        this.az_name = az_name;
+    }
+
+    public String getInstance_type() {
+        return instance_type;
+    }
+
+    public void setInstance_type(String instance_type) {
+        this.instance_type = instance_type;
+    }
+
+    public Float getMax_price() {
+        return max_price;
+    }
+
+    public void setMax_price(Float max_price) {
+        this.max_price = max_price;
+    }
 }

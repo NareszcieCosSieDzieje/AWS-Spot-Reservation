@@ -20,9 +20,10 @@ import com.datastax.driver.mapping.annotations.Table;
  *   spots_reserved counter
  */
 
-@Table(keyspace = "aws", name = "az_to_ec2_mapping",
-        caseSensitiveKeyspace = false,
-        caseSensitiveTable = false)
+//@Table(keyspace = "aws", name = "az_to_ec2_mapping",
+//        caseSensitiveKeyspace = false,
+@Entity(defaultKeyspace = "aws")
+@CqlName(value = "az_to_ec2_mapping")
 public class AZToEC2Mapping {
     @PartitionKey
     @Column(name = "region")
@@ -45,6 +46,63 @@ public class AZToEC2Mapping {
     @Column(name = "max_spots_available")
     private int max_spots_available;
 
-    @Column(name = "spots_reserved")
+    @CqlName(value = "spots_reserved")
     private int spots_reserved;
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getInstance_type() {
+        return instance_type;
+    }
+
+    public void setInstance_type(String instance_type) {
+        this.instance_type = instance_type;
+    }
+
+    public String getAz_name() {
+        return az_name;
+    }
+
+    public void setAz_name(String az_name) {
+        this.az_name = az_name;
+    }
+
+    public float getMin_price() {
+        return min_price;
+    }
+
+    public void setMin_price(float min_price) {
+        this.min_price = min_price;
+    }
+
+    public float getCurrent_price() {
+        return current_price;
+    }
+
+    public void setCurrent_price(float current_price) {
+        this.current_price = current_price;
+    }
+
+    public int getMax_spots_available() {
+        return max_spots_available;
+    }
+
+    public void setMax_spots_available(int max_spots_available) {
+        this.max_spots_available = max_spots_available;
+    }
+
+    public int getSpots_reserved() {
+        return spots_reserved;
+    }
+
+    public void setSpots_reserved(int spots_reserved) {
+        this.spots_reserved = spots_reserved;
+    }
 }
+
