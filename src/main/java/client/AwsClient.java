@@ -14,6 +14,8 @@ public class AwsClient {
 
         CassandraConnector cassandraConnector = new CassandraConnector();
         cassandraConnector.connect(args[0], Integer.parseInt(args[1]));
+        cassandraConnector.createKeyspace("aws", "SimpleStrategy", 2);
+        cassandraConnector.initCleanDatabase("aws");
 //        cassandraConnector.close();
         Session session = cassandraConnector.getSession();
 //        for (Row r: session.execute("SELECT * FROM test.mytable")) {
