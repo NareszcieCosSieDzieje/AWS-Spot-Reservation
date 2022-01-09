@@ -1,9 +1,9 @@
 package models;
 
-import com.datastax.driver.mapping.annotations.ClusteringColumn;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.Table;
+import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
+import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 /*
  * ascii      boolean    decimal    float      int        set        time       tinyint    varint
@@ -25,25 +25,25 @@ import com.datastax.driver.mapping.annotations.Table;
 @Entity(defaultKeyspace = "aws")
 @CqlName(value = "az_to_ec2_mapping")
 public class AZToEC2Mapping {
-    @PartitionKey
-    @Column(name = "region")
+    @PartitionKey(0)
+    @CqlName(value = "region")
     private String region;
 
     @PartitionKey(1)
-    @Column(name = "instance_type")
+    @CqlName(value = "instance_type")
     private String instance_type;
 
     @ClusteringColumn
-    @Column(name = "az_name")
+    @CqlName(value = "az_name")
     private String az_name;
 
-    @Column(name = "min_price")
+    @CqlName(value = "min_price")
     private float min_price;
 
-    @Column(name = "current_price")
+    @CqlName(value = "current_price")
     private float current_price;
 
-    @Column(name = "max_spots_available")
+    @CqlName(value = "max_spots_available")
     private int max_spots_available;
 
     @CqlName(value = "spots_reserved")

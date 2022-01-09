@@ -28,7 +28,12 @@ public class CassandraConnector {
 
 //    private Cluster cluster;
 
-    private Session session;
+    private CqlSession session;
+
+//    private MappingManager mappingManager;
+
+//    private HashMap<String, Mapper> modelMapping = new HashMap<String, Mapper>();
+    private HashMap<String, Object> modelMapping = new HashMap<String, Object>();
 
     public CassandraConnector() {
 
@@ -49,6 +54,28 @@ public class CassandraConnector {
 //        CodecRegistry myCodecRegistry = cluster.getConfiguration().getCodecRegistry();
 //        myCodecRegistry.register(new EnumNameCodec<AZStatus>(AZStatus.class));
 //    }
+
+    public void createMappingManager() {
+        if (this.session != null) {
+            this.mappingManager = new MappingManager(this.session);
+        }
+    }
+
+    public void createObjectMapping() {
+
+        if (this.mappingManager != null) {
+            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
+            this.modelMapping.put("availabilty_zone", mapper);
+            Mapper<AWSSpot> mapper = this.mappingManager.mapper(AWSSpot.class);
+            this.modelMapping.put("aws_spot", mapper);
+            Mapper<EC2Instance> mapper = this.mappingManager.mapper(EC2Instance.class);
+            this.modelMapping.put("ec2_instance", mapper);
+            this.modelMapping.put("az_to_ec2_mapping", mapper);
+            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
+            this.modelMapping.put("spots_reserved", mapper);
+        }
+    }
+
 
     public Session getSession() {
         return this.session;

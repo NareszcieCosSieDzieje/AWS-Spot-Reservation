@@ -13,18 +13,51 @@ package models;
  *
  */
 
-@Table(keyspace = "aws", name = "availability_zone",
-        caseSensitiveKeyspace = false,
-        caseSensitiveTable = false)
+import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
+import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
+
+
+//@Table(keyspace = "aws", name = "availability_zone",
+//        caseSensitiveKeyspace = false,
+//        caseSensitiveTable = false)
+@Entity(defaultKeyspace = "aws")
+@CqlName(value = "availability_zone")
 public class AvailabilityZone {
+
     @PartitionKey
-    @Column(name = "region")
+    @CqlName("region")
     private String region;
 
     @ClusteringColumn
-    @Column(name = "name")
+    @CqlName("name")
     private String name;
 
-    @Column(name = "status")
+    @CqlName("status")
     private AZStatus status;
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public AZStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AZStatus status) {
+        this.status = status;
+    }
 }
