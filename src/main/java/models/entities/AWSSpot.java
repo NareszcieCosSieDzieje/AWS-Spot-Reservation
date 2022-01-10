@@ -1,4 +1,4 @@
-package models;
+package models.entities;
 
 /*
  * ascii      boolean    decimal    float      int        set        time       tinyint    varint
