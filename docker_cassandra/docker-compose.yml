@@ -1,4 +1,4 @@
-version: '2.4' # 2.4 is the last version that supports depends_on conditions for service health
+version: '3.8'
 networks:
   cassandra:  # docker network where all cassandra nodes will be put in
 services:

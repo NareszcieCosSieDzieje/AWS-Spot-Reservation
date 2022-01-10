@@ -30,6 +30,17 @@ public class SpotsReserved {
     @CqlName(value = "counter")
     private int spots_reserved;
 
+    public SpotsReserved() {
+
+    }
+
+    public SpotsReserved(String region, String instance_type, String az_name, int spots_reserved) {
+        this.region = region;
+        this.instance_type = instance_type;
+        this.az_name = az_name;
+        this.spots_reserved = spots_reserved;
+    }
+
     public String getRegion() {
         return region;
     }
@@ -60,5 +71,15 @@ public class SpotsReserved {
 
     public void setSpots_reserved(int spots_reserved) {
         this.spots_reserved = spots_reserved;
+    }
+
+    @Override
+    public String toString() {
+        return "SpotsReserved{" +
+                "region='" + region + '\'' +
+                ", instance_type='" + instance_type + '\'' +
+                ", az_name='" + az_name + '\'' +
+                ", spots_reserved=" + spots_reserved +
+                '}';
     }
 }

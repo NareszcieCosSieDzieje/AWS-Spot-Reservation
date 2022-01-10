@@ -1,5 +1,6 @@
 package models.daos;
 
+import com.datastax.oss.driver.api.core.PagingIterable;
 import com.datastax.oss.driver.api.mapper.annotations.Dao;
 import com.datastax.oss.driver.api.mapper.annotations.Delete;
 import com.datastax.oss.driver.api.mapper.annotations.Insert;
@@ -14,6 +15,9 @@ public interface Ec2InstanceDao {
 
     @Select
     EC2Instance findByInstanceTypeAndFamily(String instance_type, String family);
+
+    @Select
+    PagingIterable<EC2Instance> findAll();
 
     @Insert
     void save(EC2Instance ec2Instance);

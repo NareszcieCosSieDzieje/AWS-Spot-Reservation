@@ -49,6 +49,20 @@ public class AZToEC2Mapping {
     @CqlName(value = "spots_reserved")
     private int spots_reserved;
 
+    public AZToEC2Mapping() {
+
+    }
+
+    public AZToEC2Mapping(String region, String instance_type, String az_name, float min_price, float current_price, int max_spots_available, int spots_reserved) {
+        this.region = region;
+        this.instance_type = instance_type;
+        this.az_name = az_name;
+        this.min_price = min_price;
+        this.current_price = current_price;
+        this.max_spots_available = max_spots_available;
+        this.spots_reserved = spots_reserved;
+    }
+
     public String getRegion() {
         return region;
     }
@@ -103,6 +117,19 @@ public class AZToEC2Mapping {
 
     public void setSpots_reserved(int spots_reserved) {
         this.spots_reserved = spots_reserved;
+    }
+
+    @Override
+    public String toString() {
+        return "AZToEC2Mapping{" +
+                "region='" + region + '\'' +
+                ", instance_type='" + instance_type + '\'' +
+                ", az_name='" + az_name + '\'' +
+                ", min_price=" + min_price +
+                ", current_price=" + current_price +
+                ", max_spots_available=" + max_spots_available +
+                ", spots_reserved=" + spots_reserved +
+                '}';
     }
 }
 

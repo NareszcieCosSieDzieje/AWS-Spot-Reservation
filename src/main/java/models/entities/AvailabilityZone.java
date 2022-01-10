@@ -38,6 +38,16 @@ public class AvailabilityZone {
     @CqlName("status")
     private AZStatus status;
 
+    public AvailabilityZone() {
+
+    }
+
+    public AvailabilityZone(String region, String name, AZStatus status) {
+        this.region = region;
+        this.name = name;
+        this.status = status;
+    }
+
     public String getRegion() {
         return region;
     }
@@ -60,5 +70,14 @@ public class AvailabilityZone {
 
     public void setStatus(AZStatus status) {
         this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return "AvailabilityZone{" +
+                "region='" + region + '\'' +
+                ", name='" + name + '\'' +
+                ", status=" + status +
+                '}';
     }
 }

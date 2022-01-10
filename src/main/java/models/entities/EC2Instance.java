@@ -39,6 +39,18 @@ public class EC2Instance {
     @CqlName(value = "network_performance")
     private String network_performance;
 
+    public EC2Instance() {
+
+    }
+
+    public EC2Instance(String instance_type, String family, int vcpu_cores, int memory_size, String network_performance) {
+        this.instance_type = instance_type;
+        this.family = family;
+        this.vcpu_cores = vcpu_cores;
+        this.memory_size = memory_size;
+        this.network_performance = network_performance;
+    }
+
     public String getInstance_type() {
         return instance_type;
     }
@@ -77,5 +89,16 @@ public class EC2Instance {
 
     public void setNetwork_performance(String network_performance) {
         this.network_performance = network_performance;
+    }
+
+    @Override
+    public String toString() {
+        return "EC2Instance{" +
+                "instance_type='" + instance_type + '\'' +
+                ", family='" + family + '\'' +
+                ", vcpu_cores=" + vcpu_cores +
+                ", memory_size=" + memory_size +
+                ", network_performance='" + network_performance + '\'' +
+                '}';
     }
 }

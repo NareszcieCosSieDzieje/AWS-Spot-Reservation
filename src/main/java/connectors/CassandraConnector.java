@@ -6,18 +6,17 @@ package connectors;
 //import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 //import com.datastax.driver.mapping.Mapper;
 //import com.datastax.driver.mapping.MappingManager;
+
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateKeyspace;
-import models.entities.AWSSpot;
-import models.entities.AvailabilityZone;
-import models.entities.EC2Instance;
+import com.datastax.oss.driver.api.querybuilder.schema.CreateTable;
+import com.datastax.oss.driver.api.querybuilder.schema.Drop;
 import models.mappers.InventoryMapper;
 
 import java.net.InetSocketAddress;
-
 import java.util.HashMap;
 
 public class CassandraConnector {
@@ -26,7 +25,7 @@ public class CassandraConnector {
 
     private CqlSession session;
 
-    private InventoryMapper mappingManager;
+    public InventoryMapper mappingManager; // fixme private
 
 //    private HashMap<String, Mapper> modelMapping = new HashMap<String, Mapper>();
     private HashMap<String, Object> modelMapping = new HashMap<String, Object>();
@@ -36,7 +35,7 @@ public class CassandraConnector {
     }
 
     public void connect(String node, Integer port) {
-        this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port)).build();
+        this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port)).withLocalDatacenter("Mars").build();
 //        Cluster.Builder b = Cluster.builder().addContactPoint(node);
 //        if (port != null) {
 //            b.withPort(port);
@@ -51,9 +50,11 @@ public class CassandraConnector {
 //        myCodecRegistry.register(new EnumNameCodec<AZStatus>(AZStatus.class));
 //    }
 
-    public void createMappingManager() {
+    public void createMappingManager(String defaultKeySpace) {
         if (this.session != null) {
-            this.mappingManager = InventoryMapper.builder(this.session).build(); // creates mapping
+            this.mappingManager = InventoryMapper.builder(this.session)
+                    .withDefaultKeyspace(defaultKeySpace)
+                    .build(); // creates mapping
         }
     }
 
@@ -86,35 +87,65 @@ public class CassandraConnector {
         session.execute(createKs.build());
     }
 
+    public void rebuildDatabase(String keyspaceName) {
+        cleanDatabase(keyspaceName);
+        initDatabase(keyspaceName);
+    }
+
+    public void cleanDatabase(String keyspaceName) {
+        Drop dropSt = SchemaBuilder.dropTable(keyspaceName, "availability_zone").ifExists();
+        session.execute(dropSt.build());
+
+        dropSt = SchemaBuilder.dropTable(keyspaceName, "ec2_instance").ifExists();
+        session.execute(dropSt.build());
+
+        dropSt = SchemaBuilder.dropTable(keyspaceName, "aws_spot").ifExists();
+        session.execute(dropSt.build());
+
+        dropSt = SchemaBuilder.dropTable(keyspaceName, "az_to_ec2_mapping").ifExists();
+        session.execute(dropSt.build());
+
+        dropSt = SchemaBuilder.dropTable(keyspaceName, "spots_reserved").ifExists();
+        session.execute(dropSt.build());
+    }
+
     public void initDatabase(String keyspaceName) {
-        SchemaBuilder.createTable("availability_zone").ifNotExists()
+        CreateTable createTableSt = SchemaBuilder.createTable(keyspaceName, "availability_zone").ifNotExists()
                 .withPartitionKey("region", DataTypes.TEXT)
                 .withClusteringColumn("name", DataTypes.TEXT)
                 .withColumn("status", DataTypes.TEXT);
+        session.execute(createTableSt.build());
 
-        final String dropAvailabilityZone = "DROP TABLE IF EXISTS " + keyspaceName + ".availability_zone;";
-        final String dropEC2Instance = "DROP TABLE IF EXISTS " + keyspaceName + ".ec2_instance;";
-        final String dropAWSSpot = "DROP TABLE IF EXISTS " + keyspaceName + ".aws_spot;";
-        final String dropAZToEC2Mapping = "DROP TABLE IF EXISTS " + keyspaceName + ".az_to_ec2_mapping;";
-        final String dropSpotsReserved = "DROP TABLE IF EXISTS " + keyspaceName + ".spots_reserved;";
+        createTableSt = SchemaBuilder.createTable(keyspaceName, "ec2_instance").ifNotExists()
+                .withPartitionKey("instance_type", DataTypes.ASCII)
+                .withClusteringColumn("family", DataTypes.ASCII)
+                .withColumn("vcpu_cores", DataTypes.INT)
+                .withColumn("memory_size", DataTypes.INT)
+                .withColumn("network_performance", DataTypes.TEXT);
+        session.execute(createTableSt.build());
 
-        final String createAvailabilityZone = "CREATE TABLE  " + keyspaceName + ".availability_zone(region text, name text, status text, PRIMARY KEY((region), name));";
-        final String createEC2Instance = "CREATE TABLE  " + keyspaceName + ".ec2_instance(family ascii, instance_type ascii, vcpu_cores int, memory_size int, network_performance text, PRIMARY KEY((instance_type), family));";
-        final String createAWSSpot = "CREATE TABLE  " + keyspaceName + ".aws_spot(region text, az_name text, instance_type ascii, max_price decimal, PRIMARY KEY((region, az_name, instance_type), max_price));";
-        final String createAZToEC2Mapping = "CREATE TABLE  " + keyspaceName + ".az_to_ec2_mapping(region text, instance_type ascii, az_name text, min_price decimal, current_price decimal, max_spots_available int, PRIMARY KEY((region, instance_type), az_name));";
-        final String createSpotsReserved = "CREATE TABLE  " + keyspaceName + ".spots_reserved(region text, instance_type ascii, az_name text, spots_reserved counter, PRIMARY KEY((region, instance_type), az_name));";
+        createTableSt = SchemaBuilder.createTable(keyspaceName, "aws_spot").ifNotExists()
+                .withPartitionKey("region", DataTypes.TEXT)
+                .withPartitionKey("az_name", DataTypes.TEXT)
+                .withPartitionKey("instance_type", DataTypes.ASCII)
+                .withClusteringColumn("max_price", DataTypes.DECIMAL);
+        session.execute(createTableSt.build());
 
-        session.execute(dropAWSSpot);
-        session.execute(dropAZToEC2Mapping);
-        session.execute(dropAvailabilityZone);
-        session.execute(dropEC2Instance);
-        session.execute(dropSpotsReserved);
+        createTableSt = SchemaBuilder.createTable(keyspaceName, "az_to_ec2_mapping").ifNotExists()
+                .withPartitionKey("region", DataTypes.TEXT)
+                .withPartitionKey("instance_type", DataTypes.ASCII)
+                .withClusteringColumn("az_name", DataTypes.TEXT)
+                .withColumn("min_price", DataTypes.DECIMAL)
+                .withColumn("current_price", DataTypes.DECIMAL)
+                .withColumn("max_spots_available", DataTypes.INT);
+        session.execute(createTableSt.build());
 
-        session.execute(createAvailabilityZone);
-        session.execute(createEC2Instance);
-        session.execute(createAWSSpot);
-        session.execute(createAZToEC2Mapping);
-        session.execute(createSpotsReserved);
+        createTableSt = SchemaBuilder.createTable(keyspaceName, "spots_reserved").ifNotExists()
+                .withPartitionKey("region", DataTypes.TEXT)
+                .withPartitionKey("instance_type", DataTypes.ASCII)
+                .withClusteringColumn("az_name", DataTypes.TEXT)
+                .withColumn("spots_reserved", DataTypes.COUNTER);
+        session.execute(createTableSt.build());
     }
 
     /*

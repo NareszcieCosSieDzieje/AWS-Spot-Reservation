@@ -4,10 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.mapper.MapperBuilder;
 import com.datastax.oss.driver.api.mapper.annotations.DaoFactory;
 import com.datastax.oss.driver.api.mapper.annotations.Mapper;
-import models.daos.AWSSpotDao;
-import models.daos.AZToEc2MappingDao;
-import models.daos.AvailabilityZoneDao;
-import models.daos.SpotsReservedDao;
+import models.daos.*;
 
 @Mapper
 public interface InventoryMapper {
@@ -27,5 +24,8 @@ public interface InventoryMapper {
 
     @DaoFactory
     SpotsReservedDao spotsReservedDao();
+
+    @DaoFactory
+    Ec2InstanceDao ec2InstanceDao();
 
 }
