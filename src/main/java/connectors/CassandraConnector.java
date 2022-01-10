@@ -6,20 +6,16 @@ package connectors;
 //import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 //import com.datastax.driver.mapping.Mapper;
 //import com.datastax.driver.mapping.MappingManager;
-import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.session.Session;
-import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateKeyspace;
-import models.AWSSpot;
-import models.AZStatus;
-import models.AvailabilityZone;
-import models.EC2Instance;
+import models.entities.AWSSpot;
+import models.entities.AvailabilityZone;
+import models.entities.EC2Instance;
+import models.mappers.InventoryMapper;
 
-import javax.xml.validation.Schema;
 import java.net.InetSocketAddress;
 
 import java.util.HashMap;
@@ -30,7 +26,7 @@ public class CassandraConnector {
 
     private CqlSession session;
 
-//    private MappingManager mappingManager;
+    private InventoryMapper mappingManager;
 
 //    private HashMap<String, Mapper> modelMapping = new HashMap<String, Mapper>();
     private HashMap<String, Object> modelMapping = new HashMap<String, Object>();
@@ -40,7 +36,7 @@ public class CassandraConnector {
     }
 
     public void connect(String node, Integer port) {
-        session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port)).build();
+        this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port)).build();
 //        Cluster.Builder b = Cluster.builder().addContactPoint(node);
 //        if (port != null) {
 //            b.withPort(port);
@@ -57,24 +53,24 @@ public class CassandraConnector {
 
     public void createMappingManager() {
         if (this.session != null) {
-            this.mappingManager = new MappingManager(this.session);
+            this.mappingManager = InventoryMapper.builder(this.session).build(); // creates mapping
         }
     }
 
-    public void createObjectMapping() {
-
-        if (this.mappingManager != null) {
-            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
-            this.modelMapping.put("availabilty_zone", mapper);
-            Mapper<AWSSpot> mapper = this.mappingManager.mapper(AWSSpot.class);
-            this.modelMapping.put("aws_spot", mapper);
-            Mapper<EC2Instance> mapper = this.mappingManager.mapper(EC2Instance.class);
-            this.modelMapping.put("ec2_instance", mapper);
-            this.modelMapping.put("az_to_ec2_mapping", mapper);
-            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
-            this.modelMapping.put("spots_reserved", mapper);
-        }
-    }
+//    public void createObjectMapping() {
+//
+//        if (this.mappingManager != null) {
+//            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
+//            this.modelMapping.put("availabilty_zone", mapper);
+//            Mapper<AWSSpot> mapper = this.mappingManager.mapper(AWSSpot.class);
+//            this.modelMapping.put("aws_spot", mapper);
+//            Mapper<EC2Instance> mapper = this.mappingManager.mapper(EC2Instance.class);
+//            this.modelMapping.put("ec2_instance", mapper);
+//            this.modelMapping.put("az_to_ec2_mapping", mapper);
+//            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
+//            this.modelMapping.put("spots_reserved", mapper);
+//        }
+//    }
 
 
     public Session getSession() {
