@@ -3,8 +3,19 @@ package client;
 import com.datastax.oss.driver.api.core.PagingIterable;
 import connectors.CassandraConnector;
 import models.daos.AWSSpotDao;
+import models.daos.Ec2InstanceDao;
 import models.entities.AWSSpot;
 import models.entities.EC2Instance;
+import models.mappers.InventoryMapper;
+
+/*
+* AWS CLIENT Steps ->
+* 1. Connect to db.
+* while True:
+*   2. Show available spots
+*   3. Choose a spot
+*   4.
+* */
 
 public class AwsClient {
 
@@ -22,17 +33,21 @@ public class AwsClient {
         cassandraConnector.createKeyspace("aws3", "SimpleStrategy", 2);
         cassandraConnector.initDatabase("aws3");
         cassandraConnector.createMappingManager("aws3");
-        AWSSpotDao dao = cassandraConnector.mappingManager.awsSpotDao();
-        cassandraConnector.mappingManager.ec2InstanceDao().save(new EC2Instance("t.big", "enterprise", 8, 4, "super-fast"));
-        PagingIterable<EC2Instance> ec2instances = cassandraConnector.mappingManager.ec2InstanceDao().findAll();
+
+        new AwsConsoleInterface(cassandraConnector.getInventoryMapper()).startLoop();
+
+        // TODO: Launch some kind of UI in loop
+        InventoryMapper inventoryMapper = cassandraConnector.getInventoryMapper();
+        Ec2InstanceDao ec2InstanceDao = inventoryMapper.ec2InstanceDao();
+        ec2InstanceDao.save(new EC2Instance("t.big", "enterprise", 8, 4, "super-fast"));
+        PagingIterable<EC2Instance> ec2instances = ec2InstanceDao.findAll();
         for (EC2Instance ec2instance: ec2instances) {
             System.out.println("my new sweet ec2 instance: " + ec2instance.toString());
         }
 
-//        AWSSpot spot = dao.findByRegionAndAzNameAndInstanceType("OHIO", "1", "t.micro");
-        PagingIterable<AWSSpot> spots = dao.findAll();
+        AWSSpotDao awsSpotDao = inventoryMapper.awsSpotDao();
+        PagingIterable<AWSSpot> spots = awsSpotDao.findAll();
         System.out.println(spots.one().toString());
-//        System.out.println("My epic spot bruh: " + spots.toString());
 
         System.out.println("Done");
         cassandraConnector.close();

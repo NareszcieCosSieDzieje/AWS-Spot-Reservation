@@ -21,34 +21,18 @@ import java.util.HashMap;
 
 public class CassandraConnector {
 
-//    private Cluster cluster;
-
     private CqlSession session;
 
-    public InventoryMapper mappingManager; // fixme private
+    private InventoryMapper mappingManager;
 
-//    private HashMap<String, Mapper> modelMapping = new HashMap<String, Mapper>();
     private HashMap<String, Object> modelMapping = new HashMap<String, Object>();
 
-    public CassandraConnector() {
-
-    }
+    public CassandraConnector() { }
 
     public void connect(String node, Integer port) {
-        this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port)).withLocalDatacenter("Mars").build();
-//        Cluster.Builder b = Cluster.builder().addContactPoint(node);
-//        if (port != null) {
-//            b.withPort(port);
-//        }
-//        cluster = b.build();
-//        this.registerCodecs(cluster);
-//        session = cluster.connect();
+        this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port))
+                .withLocalDatacenter("Mars").build();
     }
-
-//    public void registerCodecs(Cluster cluster) {
-//        CodecRegistry myCodecRegistry = cluster.getConfiguration().getCodecRegistry();
-//        myCodecRegistry.register(new EnumNameCodec<AZStatus>(AZStatus.class));
-//    }
 
     public void createMappingManager(String defaultKeySpace) {
         if (this.session != null) {
@@ -58,24 +42,12 @@ public class CassandraConnector {
         }
     }
 
-//    public void createObjectMapping() {
-//
-//        if (this.mappingManager != null) {
-//            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
-//            this.modelMapping.put("availabilty_zone", mapper);
-//            Mapper<AWSSpot> mapper = this.mappingManager.mapper(AWSSpot.class);
-//            this.modelMapping.put("aws_spot", mapper);
-//            Mapper<EC2Instance> mapper = this.mappingManager.mapper(EC2Instance.class);
-//            this.modelMapping.put("ec2_instance", mapper);
-//            this.modelMapping.put("az_to_ec2_mapping", mapper);
-//            Mapper<AvailabilityZone> mapper = this.mappingManager.mapper(AvailabilityZone.class);
-//            this.modelMapping.put("spots_reserved", mapper);
-//        }
-//    }
-
-
     public Session getSession() {
         return this.session;
+    }
+
+    public InventoryMapper getInventoryMapper() {
+        return this.mappingManager;
     }
 
     public void close() {
@@ -152,40 +124,5 @@ public class CassandraConnector {
      * ascii      boolean    decimal    float      int        set        time       tinyint    varint
      * bigint     counter    double     frozen     list       smallint   timestamp  uuid
      * blob       date       duration   inet       map        text       timeuuid   varchar
-     *
-     * Table AWSSpot
-     *   region text, PK FK -> AvailabilityZone
-     *   az_name text, PK FK -> AvailabilityZone
-     *   instance_type ascii PK FK -> EC2Instance(instance_type)
-     *   max_price decimal, CC # how much are you willing to pay to keep running instance
-     *
-     * Table EC2Instance
-     *   instance_type ascii, PK # t2.micro, t2.small
-     *   family ascii, CC # t2
-     *   vcpu_cores int,
-     *   memory_size int,
-     *   network_performance text
-     *
-     * Table AZToEC2Mapping
-     *   region text, FK -> AvailabilityZone PK
-     *   instance_type ascii, FK -> EC2Instance PK
-     *   az_name text, FK -> AvailabilityZone CC
-     *   min_price decimal, # CONSTANT
-     *   current_price decimal, # BASED ON spots_reserved and instance type
-     *   max_spots_available int,
-     *   spots_reserved counter
-     *
-     * Table SpotsReserved
-     *   region text, PK
-     *   instance_type ascii, PK
-     *   az_name text PK
-     *   spots_reserved counter
-     *
-     * Table AvailabilityZone
-     *   region text, PK # US EAST
-     *   name text, CC # 1a
-     *   -- available_spots ONE_TO_MANY FK -> AZToEC2Mapping
-     *   status text # up, down
-     *
      */
 }

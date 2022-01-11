@@ -5,6 +5,8 @@ import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
+import java.math.BigDecimal;
+
 /*
  * ascii      boolean    decimal    float      int        set        time       tinyint    varint
  * bigint     counter    double     frozen     list       smallint   timestamp  uuid
@@ -38,10 +40,10 @@ public class AZToEC2Mapping {
     private String az_name;
 
     @CqlName(value = "min_price")
-    private float min_price;
+    private BigDecimal min_price;
 
     @CqlName(value = "current_price")
-    private float current_price;
+    private BigDecimal current_price;
 
     @CqlName(value = "max_spots_available")
     private int max_spots_available;
@@ -53,7 +55,7 @@ public class AZToEC2Mapping {
 
     }
 
-    public AZToEC2Mapping(String region, String instance_type, String az_name, float min_price, float current_price, int max_spots_available, int spots_reserved) {
+    public AZToEC2Mapping(String region, String instance_type, String az_name, BigDecimal min_price, BigDecimal current_price, int max_spots_available, int spots_reserved) {
         this.region = region;
         this.instance_type = instance_type;
         this.az_name = az_name;
@@ -87,19 +89,19 @@ public class AZToEC2Mapping {
         this.az_name = az_name;
     }
 
-    public float getMin_price() {
+    public BigDecimal getMin_price() {
         return min_price;
     }
 
-    public void setMin_price(float min_price) {
+    public void setMin_price(BigDecimal min_price) {
         this.min_price = min_price;
     }
 
-    public float getCurrent_price() {
+    public BigDecimal getCurrent_price() {
         return current_price;
     }
 
-    public void setCurrent_price(float current_price) {
+    public void setCurrent_price(BigDecimal current_price) {
         this.current_price = current_price;
     }
 

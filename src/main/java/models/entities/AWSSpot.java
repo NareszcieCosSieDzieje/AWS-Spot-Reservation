@@ -36,7 +36,7 @@ public class AWSSpot {
 
     @PartitionKey(2)
     @CqlName(value = "instance_type")
-    private String instance_type; //fixme ascii
+    private String instance_type;
 
     @ClusteringColumn
     @CqlName(value = "max_price")
