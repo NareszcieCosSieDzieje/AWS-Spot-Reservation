@@ -87,7 +87,7 @@ public class AWSSpot {
         this.max_price = max_price;
     }
 
-    public UUID getUser_id() {
+    public UUID getUserID() {
         return user_id;
     }
 
