@@ -1,6 +1,7 @@
 package client;
 
 import com.datastax.oss.driver.api.core.PagingIterable;
+import models.daos.AWSSpotDao;
 import models.entities.AWSSpot;
 import models.entities.AZToEC2Mapping;
 import models.mappers.InventoryMapper;
@@ -8,6 +9,7 @@ import models.mappers.InventoryMapper;
 import java.util.*;
 import java.util.function.Consumer;
 import java.lang.reflect.*; //FIXME WYWAL
+import java.util.stream.Collectors;
 
 public class AwsConsoleInterface {
 
@@ -19,12 +21,19 @@ public class AwsConsoleInterface {
     }
 
     public void startLoop() {
+
+        // TODO: DODAC LOGOWANIE?
+        // TODO: GDZIE MA BYC POLE USER? TUTAJ? czy w kliencie
+
         this.optionsMenu("# "); //TODO: USUN
         String response;
         printHeader();
         do {
             printMenu();
             response = getResponse();
+            if (response == -1) {
+                continue;
+            }
             handleResponse(response);
             System.out.println();
         } while (!response.equalsIgnoreCase(EXIT_CODE));
@@ -46,10 +55,19 @@ public class AwsConsoleInterface {
         System.out.println(EXIT_CODE + ". Exit");
     }
 
-    private String getResponse() {
+    private int getResponse() {
         System.out.print("Your choice: ");
         Scanner reader = new Scanner(System.in);
-        return reader.nextLine().strip();
+        int choice = -1;
+        try {
+            choice = Integer.parseInt(reader.nextLine().strip());
+        } catch (NumberFormatException e) {
+            System.err.println("Choice invalid. Choice range [1, 4]");
+        }
+        if (choice < 1 || choice > 4) {
+            System.err.println("Choice invalid. Choice range [1, 4]");
+        }
+        return choice;
     }
 
     private <T> T getSelectedItem(ArrayList<T> selectionList, String loopText) {
@@ -123,8 +141,33 @@ public class AwsConsoleInterface {
         return "";
     }
 
-    private void handleResponse(String response) {
+    private void handleResponse(int response) {
         System.out.println("Your choice was: " + response);
+
+        UUID userID = new UUID(1L, 2L); // THIS IS RANDOM FIXME: FIX THIS!
+        // TODO: GET USER AND ID
+        if (response == 1) {
+            /* TODO:
+            * PRINT SPOTS with stats?
+            * again get choice?
+            * reserve the spot, or multiple?
+            * */
+        } else if (response == 2) {
+            // show spots belonging to the user
+            ArrayList<AWSSpot> awsSpots = inventoryMapper.awsSpotDao().findAll().all().stream().filter(
+                    (awsSpot) ->
+                            awsSpot.getUserID() == userID
+            ).collect(Collectors.toCollection(ArrayList::new));
+            // TODO: PRINT SPOTS BELONGING TO USER
+            System.out.printf("Reserved spots:");
+            for(int i = 0; i < awsSpots.size(); i++) {
+                System.out.printf(i + ". " + awsSpots.get(i)); //FIXME przeskalowac o 1+?
+            }
+        } else if (response == 3) {
+            // TODO: print instance types?
+        } else if (response == 4) {
+            // TODO: simulation?
+        }
     }
 
     private void reserveSpot(String region, String instance_type, String az_name) {
