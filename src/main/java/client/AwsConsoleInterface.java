@@ -5,10 +5,9 @@ import models.entities.AWSSpot;
 import models.entities.AZToEC2Mapping;
 import models.mappers.InventoryMapper;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Spliterator;
+import java.util.*;
+import java.util.function.Consumer;
+import java.lang.reflect.*; //FIXME WYWAL
 
 public class AwsConsoleInterface {
 
@@ -53,67 +52,74 @@ public class AwsConsoleInterface {
         return reader.nextLine().strip();
     }
 
-    private Object getSelectedItem(ArrayList<Object> selectionList, String loopText) {
+    private <T> T getSelectedItem(ArrayList<T> selectionList, String loopText) {
         Scanner reader = new Scanner(System.in);
-        var resultItem = null;
-        boolean indexOk = false;
+        int indexStart = 0;
+        int indexEnd = selectionList.size() - 1;
+        int chosenIndex = -1;
+        final Runnable errorMessage = () -> {
+            System.out.println("Index must be a valid integer! The accepted range is [" + indexStart + ", " + indexEnd + "]");
+        };
+
         do {
             System.out.println(loopText);
-            //TODO: reader.nextLine().strip();
-            if (indexOk) {
-                break;
+            try {
+                chosenIndex = Integer.parseInt(reader.nextLine().strip());
+            } catch(NumberFormatException e) {
+                errorMessage.run();
+                continue;
             }
+            if (chosenIndex < indexStart || chosenIndex > indexEnd) {
+                errorMessage.run();
+                continue;
+            }
+            return selectionList.get(chosenIndex);
         } while (true);
     }
 
     private String optionsMenu(String prompt) {
         PagingIterable<AZToEC2Mapping> azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().findAll();
-        HashSet<String> foundRegions = new HashSet();
-        HashSet<String> foundAzs = new HashSet();
-        HashSet<String> foundInstanceTypes = new HashSet();
+        HashSet<String> foundRegionsSet = new HashSet();
+        HashSet<String> foundAzsSet = new HashSet();
+        HashSet<String> foundInstanceTypesSet = new HashSet();
         Spliterator<AZToEC2Mapping> azToEC2MappingSpliterator = azToEC2Mappings.spliterator();
         azToEC2MappingSpliterator.forEachRemaining( (item) -> {
-            foundRegions.add(item.getRegion());
-            foundAzs.add(item.getAz_name());
-            foundInstanceTypes.add(item.getInstance_type());
+            foundRegionsSet.add(item.getRegion());
+            foundAzsSet.add(item.getAz_name());
+            foundInstanceTypesSet.add(item.getInstance_type());
 //            System.out.println(item);
         } );
 
         System.out.print(prompt);
-//        String foundRegionsArr[] = (String[]) foundRegions.toArray();
 
-        String foundAzsList[] = new String[foundAzs.size()];
-        foundAzs.toArray(foundAzsList);
+        ArrayList<String> foundAzsList = new ArrayList<>(foundAzsSet);
+        ArrayList<String> foundRegionsList = new ArrayList<>(foundRegionsSet);
+        ArrayList<String> foundInstanceTypesList = new ArrayList<>(foundInstanceTypesSet);
 
-        String foundRegionsList[] = new String[foundRegions.size()];
-        foundRegions.toArray(foundRegionsList);
+        ArrayList<ArrayList<String>> listOfLists = new ArrayList<>(Arrays.asList(foundAzsList, foundRegionsList, foundInstanceTypesList));
+        HashMap<Integer, String> listPromptMap = new HashMap<>(Map.of(
+                0, "Choose region",
+                1, "Choose availability zone",
+                2, "Choose instance type"));
 
-        String foundInstanceTypesList[] = new String[foundInstanceTypes.size()];
-        foundInstanceTypes.toArray(foundInstanceTypesList);
+        HashMap<Integer, String> chosenElements = new HashMap<>();
 
-        int idx = 1;
-        for (String region: foundRegionsList) {
-            System.out.println(idx + ". " + region);
-            idx += 1;
+        for(List<String> list: listOfLists) {
+            int listIndex = listOfLists.indexOf(list);
+            if (listIndex < 0) {
+                System.err.println("Error getting the list index!");
+            }
+            int idx = 0;
+            for (String elem: list) {
+                System.out.println(idx + ". " + elem);
+                idx += 1;
+            }
+            String chosenItem = this.getSelectedItem(foundRegionsList, listPromptMap.get(listIndex));
+            chosenElements.put(listIndex, chosenItem);
         }
 
-        String chosenRegion = this.getSelectedItem(foundRegionsList, "Choose region");
+        // TODO: USE 'chosenElements' !!
 
-        idx = 1;
-        for (String az: foundAzsList) {
-            System.out.println(idx + ". " + az);
-            idx += 1;
-        }
-
-        idx = 1;
-        for (String instanceType: foundInstanceTypesList) {
-            System.out.println(idx + ". " + instanceType);
-            idx += 1;
-        }
-
-        System.out.println("Choose availability zone");
-        //
-        System.out.println("Choose instance type");
         return "";
     }
 
