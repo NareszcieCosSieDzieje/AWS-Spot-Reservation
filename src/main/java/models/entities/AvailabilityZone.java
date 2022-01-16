@@ -36,7 +36,7 @@ public class AvailabilityZone {
     private String name;
 
     @CqlName("status")
-    private AZStatus status;
+    private String status;
 
     public AvailabilityZone() {
 
@@ -45,7 +45,7 @@ public class AvailabilityZone {
     public AvailabilityZone(String region, String name, AZStatus status) {
         this.region = region;
         this.name = name;
-        this.status = status;
+        this.status = status.toString();
     }
 
     public String getRegion() {
@@ -64,12 +64,12 @@ public class AvailabilityZone {
         this.name = name;
     }
 
-    public AZStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 
     public void setStatus(AZStatus status) {
-        this.status = status;
+        this.status = status.toString();
     }
 
     @Override

@@ -7,16 +7,14 @@ import com.datastax.oss.driver.api.mapper.annotations.Insert;
 import com.datastax.oss.driver.api.mapper.annotations.Select;
 import models.entities.User;
 
-import java.util.UUID;
-
 @Dao
 public interface UserDao {
 
     @Select
-    User find(UUID id);
+    User find(String name);
 
     @Select
-    PagingIterable<User> findAll(UUID id);
+    PagingIterable<User> findAll();
 
     @Insert
     void save(User user);

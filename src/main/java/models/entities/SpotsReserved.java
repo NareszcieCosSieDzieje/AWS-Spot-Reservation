@@ -3,6 +3,8 @@ package models.entities;
 import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
+
+import java.math.BigInteger;
 /*
 * Table SpotsReserved
         *   region text, PK
@@ -27,14 +29,14 @@ public class SpotsReserved {
     @CqlName(value = "az_name")
     private String az_name;
 
-    @CqlName(value = "counter")
-    private int spots_reserved;
+    @CqlName(value = "spots_reserved")
+    private long spots_reserved;
 
     public SpotsReserved() {
 
     }
 
-    public SpotsReserved(String region, String instance_type, String az_name, int spots_reserved) {
+    public SpotsReserved(String region, String instance_type, String az_name, long spots_reserved) {
         this.region = region;
         this.instance_type = instance_type;
         this.az_name = az_name;
@@ -65,11 +67,11 @@ public class SpotsReserved {
         this.az_name = az_name;
     }
 
-    public int getSpots_reserved() {
+    public long getSpots_reserved() {
         return spots_reserved;
     }
 
-    public void setSpots_reserved(int spots_reserved) {
+    public void setSpots_reserved(long spots_reserved) {
         this.spots_reserved = spots_reserved;
     }
 

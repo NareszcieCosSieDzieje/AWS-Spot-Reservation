@@ -5,7 +5,6 @@ import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 /*
  * ascii      boolean    decimal    float      int        set        time       tinyint    varint
@@ -22,25 +21,20 @@ import java.util.UUID;
 @Entity(defaultKeyspace = "aws")
 @CqlName(value = "user")
 public class User {
-
-    @PartitionKey
-    @CqlName("id")
-    private UUID id;
-
     @CqlName("name")
+    @PartitionKey
     private String name;
 
-    @CqlName("name")
+    @CqlName("password")
     private String password;
 
-    @CqlName("name")
+    @CqlName("credits")
     private BigDecimal credits;
 
     public User() {
     }
 
-    public User(UUID id, String name, String password, BigDecimal credits) {
-        this.id = id;
+    public User(String name, String password, BigDecimal credits) {
         this.name = name;
         this.password = password;
         this.credits = credits;
@@ -69,9 +63,4 @@ public class User {
     public void setCredits(BigDecimal credits) {
         this.credits = credits;
     }
-
-    public UUID getId() {
-        return id;
-    }
-
 }
