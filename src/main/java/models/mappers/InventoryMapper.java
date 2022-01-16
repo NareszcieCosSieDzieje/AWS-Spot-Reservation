@@ -28,4 +28,7 @@ public interface InventoryMapper {
     @DaoFactory
     Ec2InstanceDao ec2InstanceDao();
 
+    @DaoFactory
+    UserDao userDao();
+
 }
