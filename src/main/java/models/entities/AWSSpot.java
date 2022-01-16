@@ -19,9 +19,6 @@ import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 import java.math.BigDecimal;
 
-//@Entity(keyspace = "aws", name = "aws_spot",
-//        caseSensitiveKeyspace = false,
-//        caseSensitiveTable = false)
 @Entity(defaultKeyspace = "aws")
 @CqlName(value = "aws_spot")
 public class AWSSpot {
