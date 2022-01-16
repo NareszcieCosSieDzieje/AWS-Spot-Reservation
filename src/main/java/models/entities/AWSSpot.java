@@ -18,6 +18,7 @@ import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity(defaultKeyspace = "aws")
 @CqlName(value = "aws_spot")
@@ -39,15 +40,19 @@ public class AWSSpot {
     @CqlName(value = "max_price")
     private BigDecimal max_price;
 
+    @CqlName(value = "user_id")
+    private UUID user_id;
+
     public AWSSpot() {
 
     }
 
-    public AWSSpot(String region, String az_name, String instance_type, BigDecimal max_price) {
+    public AWSSpot(String region, String az_name, String instance_type, BigDecimal max_price, UUID user_id) {
         this.region = region;
         this.az_name = az_name;
         this.instance_type = instance_type;
         this.max_price = max_price;
+        this.user_id = user_id;
     }
 
     public String getRegion() {
@@ -82,6 +87,10 @@ public class AWSSpot {
         this.max_price = max_price;
     }
 
+    public UUID getUser_id() {
+        return user_id;
+    }
+
     @Override
     public String toString() {
         return "AWSSpot{" +
@@ -89,6 +98,7 @@ public class AWSSpot {
                 ", az_name='" + az_name + '\'' +
                 ", instance_type='" + instance_type + '\'' +
                 ", max_price=" + max_price +
+                ", user_id=" + user_id +
                 '}';
     }
 }

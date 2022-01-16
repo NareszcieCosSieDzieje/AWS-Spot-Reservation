@@ -79,6 +79,9 @@ public class CassandraConnector {
 
         dropSt = SchemaBuilder.dropTable(keyspaceName, "spots_reserved").ifExists();
         session.execute(dropSt.build());
+
+        dropSt = SchemaBuilder.dropTable(keyspaceName, "user").ifExists();
+        session.execute(dropSt.build());
     }
 
     public void initDatabase(String keyspaceName) {
@@ -100,7 +103,8 @@ public class CassandraConnector {
                 .withPartitionKey("region", DataTypes.TEXT)
                 .withPartitionKey("az_name", DataTypes.TEXT)
                 .withPartitionKey("instance_type", DataTypes.ASCII)
-                .withClusteringColumn("max_price", DataTypes.DECIMAL);
+                .withClusteringColumn("max_price", DataTypes.DECIMAL)
+                .withClusteringColumn("user_id", DataTypes.UUID);
         session.execute(createTableSt.build());
 
         createTableSt = SchemaBuilder.createTable(keyspaceName, "az_to_ec2_mapping").ifNotExists()
@@ -117,6 +121,13 @@ public class CassandraConnector {
                 .withPartitionKey("instance_type", DataTypes.ASCII)
                 .withClusteringColumn("az_name", DataTypes.TEXT)
                 .withColumn("spots_reserved", DataTypes.COUNTER);
+        session.execute(createTableSt.build());
+
+        createTableSt = SchemaBuilder.createTable(keyspaceName, "user").ifNotExists()
+                .withPartitionKey("id", DataTypes.UUID)
+                .withPartitionKey("name", DataTypes.TEXT)
+                .withClusteringColumn("password", DataTypes.TEXT)
+                .withColumn("credits", DataTypes.DECIMAL);
         session.execute(createTableSt.build());
     }
 
