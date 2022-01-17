@@ -28,17 +28,22 @@ public class User {
     @CqlName("password")
     private String password;
 
+    @CqlName("salt")
+    private String salt;
+
     @CqlName("credits")
     private BigDecimal credits;
 
     public User() {
     }
 
-    public User(String name, String password, BigDecimal credits) {
+    public User(String name, String password, String salt, BigDecimal credits) {
         this.name = name;
         this.password = password;
+        this.salt = salt;
         this.credits = credits;
     }
+
 
     public String getName() {
         return name;
@@ -62,5 +67,13 @@ public class User {
 
     public void setCredits(BigDecimal credits) {
         this.credits = credits;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 }

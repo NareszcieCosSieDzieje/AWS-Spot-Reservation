@@ -1,6 +1,10 @@
 package client;
 
+import client.security.SecurePassword;
 import connectors.CassandraConnector;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 /*
 * AWS CLIENT Steps ->
@@ -14,6 +18,20 @@ import connectors.CassandraConnector;
 public class AwsClient {
 
     public static void main(String[] args) {
+
+
+        // TODO: DELETE THIS, THIS IS AN EXAMPLE HOW TO USE!
+//        String pass = "sekretnehaslo12345";
+//        String[] saltedHash = SecurePassword.createSaltedHash(pass);
+//        System.out.println("first hash " + saltedHash[0] + " " + saltedHash[1]);
+//        boolean res = SecurePassword.compareHashWithPassword(pass, saltedHash[0], saltedHash[1]);
+//        if (res) {
+//            System.out.println("All is ok");
+//        } else {
+//            System.out.println("No i nie dziala!");
+//        }
+//        return;
+        // TODO: DELETE UPPER
 
         String message = null;
         boolean rebuild = false;

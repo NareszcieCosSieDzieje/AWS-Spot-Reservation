@@ -1,5 +1,6 @@
 package client;
 
+import client.security.SecurePassword;
 import com.datastax.oss.driver.api.core.PagingIterable;
 import models.daos.AWSSpotDao;
 import models.entities.AWSSpot;
@@ -9,6 +10,8 @@ import models.mappers.InventoryMapper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,7 +80,9 @@ public class AwsConsoleInterface {
                 user = new User();
                 user.setName(username);
                 user.setCredits(new BigDecimal(1000));
-                user.setPassword(pass);
+                String[] saltAndHash = SecurePassword.createSaltedHash(pass);
+                user.setSalt(saltAndHash[0]);
+                user.setPassword(saltAndHash[1]);
                 inventoryMapper.userDao().save(user);
                 System.out.printf("User %s created. You get %.2f credits for registering!%n", user.getName(), user.getCredits());
                 currUser = user;
@@ -88,7 +93,7 @@ public class AwsConsoleInterface {
         } else {
             System.out.print("Enter password: ");
             String pass = reader.nextLine();
-            if (user.getPassword().equals(pass)) {
+            if (SecurePassword.compareHashWithPassword(pass, user.getSalt(), user.getPassword())) {
                 System.out.println("Access Granted");
                 currUser = user;
                 return true;

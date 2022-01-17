@@ -135,6 +135,7 @@ public class CassandraConnector {
         createTableSt = SchemaBuilder.createTable(keyspaceName, "user").ifNotExists()
                 .withPartitionKey("name", DataTypes.TEXT)
                 .withColumn("password", DataTypes.TEXT)
+                .withColumn("salt", DataTypes.TEXT)
                 .withColumn("credits", DataTypes.DECIMAL);
         session.execute(createTableSt.build());
     }
