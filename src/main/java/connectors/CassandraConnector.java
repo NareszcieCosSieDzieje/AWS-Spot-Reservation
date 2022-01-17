@@ -16,12 +16,16 @@ import com.datastax.oss.driver.api.querybuilder.schema.CreateKeyspace;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateTable;
 import com.datastax.oss.driver.api.querybuilder.schema.Drop;
 import models.daos.*;
-import models.entities.EC2Instance;
+import models.entities.*;
+import models.enums.AZStatus;
 import models.mappers.InventoryMapper;
 import org.javatuples.Quartet;
 import org.javatuples.Quintet;
+import org.javatuples.Sextet;
+import org.javatuples.Triplet;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,6 +117,7 @@ public class CassandraConnector {
                 .withPartitionKey("region", DataTypes.TEXT)
                 .withPartitionKey("az_name", DataTypes.TEXT)
                 .withPartitionKey("instance_type", DataTypes.ASCII)
+                .withPartitionKey("spot_id", DataTypes.UUID)
                 .withClusteringColumn("max_price", DataTypes.DECIMAL)
                 .withClusteringColumn("user_name", DataTypes.TEXT);
         session.execute(createTableSt.build());
@@ -167,10 +172,86 @@ public class CassandraConnector {
             ec2InstanceDao.save(ec2Instance);
         }
 
-        // TODO: Add data for remaining tables
+        ArrayList<Triplet<String, String, BigDecimal>> usersParams = new ArrayList(List.of(
+                new Triplet("Paul", "paulos123", new BigDecimal(1000)),
+                new Triplet("Chris", "chris!", new BigDecimal(1000)),
+                new Triplet("Adminos", "Maximos!@#", new BigDecimal(9999999)),
+                new Triplet("JeffB", "Amazong", new BigDecimal(999999)),
+                new Triplet("Martha", "fl0W3r", new BigDecimal(780)),
+                new Triplet("Kate", "C0ff3#", new BigDecimal(2310))
+        ));
+        for (Triplet<String, String, BigDecimal> userParams: usersParams) {
+            User user = new User(userParams.getValue0(),
+                    userParams.getValue1(),
+                    userParams.getValue2());
+            userDao.save(user);
+        }
+
+        // TODO: Probably should be filled with every instance type for every region and az combo
+        ArrayList<Sextet<String, String, String, BigDecimal, BigDecimal, Integer>> azToEC2MappingsParams = new ArrayList(List.of(
+                new Sextet("us-east-1", "t2.micro", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
+                new Sextet("us-east-1", "t2.nano", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
+                new Sextet("us-east-2", "t2.medium", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 10),
+                new Sextet("eu-central-1", "t2.small", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
+                new Sextet("eu-central-1", "t2.micro", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
+                new Sextet("eu-west-1", "t3.nano", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30)
+        ));
+        for (Sextet<String, String, String, BigDecimal, BigDecimal, Integer> azToEC2MappingParams: azToEC2MappingsParams) {
+            AZToEC2Mapping azToEC2Mapping = new AZToEC2Mapping(azToEC2MappingParams.getValue0(),
+                    azToEC2MappingParams.getValue1(),
+                    azToEC2MappingParams.getValue2(),
+                    azToEC2MappingParams.getValue3(),
+                    azToEC2MappingParams.getValue4(),
+                    azToEC2MappingParams.getValue5());
+            azToEc2MappingDao.save(azToEC2Mapping);
+        }
+
+        ArrayList<Quintet<String, String, String, BigDecimal, String>> awsSpotsParams = new ArrayList(List.of(
+                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+                new Quintet("us-east-1", "b", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+                new Quintet("us-east-2", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.029"), "Paul"),
+                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.030"), "Chris"),
+                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.045"), "Adminos")
+        ));
+        for (Quintet<String, String, String, BigDecimal, String> awsSpotParams: awsSpotsParams) {
+            AWSSpot awsSpot = new AWSSpot(awsSpotParams.getValue0(),
+                    awsSpotParams.getValue1(),
+                    awsSpotParams.getValue2(),
+                    awsSpotParams.getValue3(),
+                    awsSpotParams.getValue4());
+            awsSpotDao.save(awsSpot);
+        }
+
+        ArrayList<Triplet<String, String, AZStatus>> availabilityZonesParams = new ArrayList(List.of(
+                new Triplet("us-east-1", "a", AZStatus.UP),
+                new Triplet("us-east-1", "b", AZStatus.UP),
+                new Triplet("us-east-2", "a", AZStatus.UP),
+                new Triplet("eu-central-1", "a", AZStatus.UP),
+                new Triplet("eu-central-1", "b", AZStatus.UP),
+                new Triplet("eu-west-1", "a", AZStatus.DOWN)
+        ));
+        for (Triplet<String, String, AZStatus> availabilityZoneParams: availabilityZonesParams) {
+            AvailabilityZone availabilityZone = new AvailabilityZone(availabilityZoneParams.getValue0(),
+                    availabilityZoneParams.getValue1(),
+                    availabilityZoneParams.getValue2());
+            availabilityZoneDao.save(availabilityZone);
+        }
+
+        ArrayList<Quartet<String, String, String, Long>> SpotsReservationsParams = new ArrayList(List.of(
+                new Quartet("us-east-1", "t2.micro", "a", 5L),
+                new Quartet("us-east-1", "t2.micro", "b", 1L),
+                new Quartet("us-east-2", "t2.micro", "a", 1L)
+        ));
+        for (Quartet<String, String, String, Long> spotsReservationParams: SpotsReservationsParams) {
+            spotsReservedDao.increment(spotsReservationParams.getValue0(),
+                    spotsReservationParams.getValue1(),
+                    spotsReservationParams.getValue2(),
+                    spotsReservationParams.getValue3());
+        }
     }
-
-
 
     /*
      * ascii      boolean    decimal    float      int        set        time       tinyint    varint

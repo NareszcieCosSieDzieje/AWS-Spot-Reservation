@@ -8,15 +8,16 @@ import com.datastax.oss.driver.api.mapper.annotations.Select;
 import models.entities.AWSSpot;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Dao
 public interface AWSSpotDao {
 
     @Select
-    AWSSpot findByRegionAndAzNameAndInstanceType(String region, String az_name, String instance_type);
+    AWSSpot findByRegionAndAzNameAndInstanceType(String region, String az_name, String instance_type, UUID spot_id);
 
     @Select
-    AWSSpot findByRegionAndAzNameAndInstanceTypeAndMaxPrice(String region, String az_name, String instance_type, BigDecimal max_price);
+    AWSSpot findByRegionAndAzNameAndInstanceTypeAndMaxPrice(String region, String az_name, String instance_type, UUID spot_id, BigDecimal max_price);
 
     @Select
     PagingIterable<AWSSpot> findAll();

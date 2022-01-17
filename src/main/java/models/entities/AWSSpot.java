@@ -36,6 +36,10 @@ public class AWSSpot {
     @CqlName(value = "instance_type")
     private String instance_type;
 
+    @PartitionKey(3)
+    @CqlName(value = "spot_id")
+    private UUID spot_id;
+
     @ClusteringColumn
     @CqlName(value = "max_price")
     private BigDecimal max_price;
@@ -51,6 +55,7 @@ public class AWSSpot {
         this.region = region;
         this.az_name = az_name;
         this.instance_type = instance_type;
+        this.spot_id = UUID.randomUUID();
         this.max_price = max_price;
         this.user_name = user_name;
     }
@@ -79,6 +84,14 @@ public class AWSSpot {
         this.instance_type = instance_type;
     }
 
+    public UUID getSpot_id() {
+        return spot_id;
+    }
+
+    public void setSpot_id(UUID spot_id) {
+        this.spot_id = spot_id;
+    }
+
     public BigDecimal getMax_price() {
         return max_price;
     }
@@ -101,6 +114,7 @@ public class AWSSpot {
                 "region='" + region + '\'' +
                 ", az_name='" + az_name + '\'' +
                 ", instance_type='" + instance_type + '\'' +
+                ", spot_id='" + spot_id + '\'' +
                 ", max_price=" + max_price +
                 ", user_name=" + user_name +
                 '}';
