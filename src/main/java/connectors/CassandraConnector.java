@@ -36,6 +36,7 @@ public class CassandraConnector {
 
     public void connect(String node, Integer port) {
         File config = new File(getClass().getClassLoader().getResource("datastax-java-driver.conf").getFile());
+
         this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port))
                 .withLocalDatacenter("Mars")
                 .withConfigLoader(DriverConfigLoader.fromFile(config))
