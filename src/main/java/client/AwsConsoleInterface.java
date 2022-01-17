@@ -57,11 +57,11 @@ public class AwsConsoleInterface {
 
     private void printMenu() {
         System.out.printf("Logged in as: %s, Credits: %.2f%n", currUser.getName(), currUser.getCredits());
-        System.out.println("1. Reserve a spot"); // TODO: Update spots reserved table
+        System.out.println("1. Reserve a spot"); // TODO: Update spots reserved table, check aztoec2mapping and dont allow to create spot if max_spots exceeded
         System.out.println("2. Show reserved spots");
         System.out.println("3. Show instance types");
         System.out.println("4. Run big traffic simulation");
-        System.out.println("5. Release reserved spot"); // TODO: Handle this
+        System.out.println("5. Release reserved spot"); // TODO: Handle this, delete spot, decrease counter
         System.out.println(EXIT_CODE + ". Exit");
     }
 
@@ -128,7 +128,7 @@ public class AwsConsoleInterface {
             System.out.println("Index must be a valid integer! The accepted range is [" + indexStart + ", " + indexEnd + "]");
         };
 
-        // TODO: leaving the function with 'X' or smth
+        // TODO: leaving the function with 'X' or smth NOT IMPORTANT
         do {
             System.out.println(loopText);
             try {
@@ -202,8 +202,8 @@ public class AwsConsoleInterface {
 
         System.out.println("Chose the maximum price you are willing to pay for the Spot");
         System.out.println("Your credits: " + this.currUser.getCredits());
-        BigDecimal minPrice = new BigDecimal(0); // FIXME WHAT IS THE MIN PRICE!
-        BigDecimal maxPrice = this.currUser.getCredits(); // fixme czy to jest max czy jeszcze cos
+        BigDecimal minPrice = new BigDecimal(0); // FIXME WHAT IS THE MIN PRICE! get from aztoec2mapping
+        BigDecimal maxPrice = this.currUser.getCredits(); // JEST Git taki max
         Scanner scanner = new Scanner(System.in);
         BigDecimal chosenMaxPrice = null;
         do {
@@ -251,15 +251,15 @@ public class AwsConsoleInterface {
                     (awsSpot) ->
                             awsSpot.getUser_name().equals(currUser.getName())
             ).collect(Collectors.toCollection(ArrayList::new));
-            // TODO: PRINT SPOTS BELONGING TO USER
             System.out.printf("Reserved spots: \n");
             for(int i = 0; i < awsSpots.size(); i++) {
-                System.out.printf(i + ". " + awsSpots.get(i)); //FIXME przeskalowac o 1+?
+                System.out.printf(i + ". " + awsSpots.get(i) + "\n");
             }
         } else if (response == 3) {
-            // TODO: print instance types?
+            // TODO: print instance types? kindof DONE get code from options menu
         } else if (response == 4) {
-            // TODO: simulation?
+            // TODO: simulation? IMPORTANT
+            // TODO: if spot_count = max then cheapest one changes user_name and max_price
         }
     }
 
