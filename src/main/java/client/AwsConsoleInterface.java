@@ -247,7 +247,7 @@ public class AwsConsoleInterface {
                             awsSpot.getUser_name().equals(currUser.getName())
             ).collect(Collectors.toCollection(ArrayList::new));
             // TODO: PRINT SPOTS BELONGING TO USER
-            System.out.printf("Reserved spots:");
+            System.out.printf("Reserved spots: \n");
             for(int i = 0; i < awsSpots.size(); i++) {
                 System.out.printf(i + ". " + awsSpots.get(i)); //FIXME przeskalowac o 1+?
             }
@@ -261,7 +261,6 @@ public class AwsConsoleInterface {
     private void reserveSpot(String region, String instance_type, String az_name) {
         AZToEC2Mapping azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().
                 findByRegionAndInstanceTypeAndAzName(region, instance_type, az_name);
-
     }
 
     private void showSpots() {
@@ -270,4 +269,5 @@ public class AwsConsoleInterface {
             System.out.println("spot: " + awsSpot.toString());
         }
     }
+
 }
