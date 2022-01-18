@@ -291,6 +291,7 @@ public class AwsConsoleInterface {
         AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
         chosenSpot.setMax_price(chosenMaxPrice);
         chosenSpot.setUser_name(this.currUser.getName());
+        this.currUser.setCredits(this.currUser.getCredits().subtract(chosenMaxPrice));
 
         this.inventoryMapper.awsSpotDao().update(chosenSpot);
     }
