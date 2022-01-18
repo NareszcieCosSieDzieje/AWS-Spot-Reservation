@@ -158,6 +158,7 @@ public class AwsConsoleInterface {
 
     private void optionsMenu(String prompt) {
         ArrayList<AWSSpot> availableAWSSpotsForThePrice = new ArrayList<>();
+        BigDecimal chosenMaxPrice = null;
         // inicjalizacja moze byc na zewnatrz bo reset tylko jak lista pusta
         do {
             PagingIterable<AZToEC2Mapping> azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().findAll();
@@ -230,7 +231,6 @@ public class AwsConsoleInterface {
 
             BigDecimal maxPrice = this.currUser.getCredits(); // TODO: czy JEST Git taki max
             Scanner scanner = new Scanner(System.in);
-            BigDecimal chosenMaxPrice = null;
             do {
                 System.out.println("Choose your max price for the spot.");
                 System.out.println("Min price is " + minPrice);
@@ -289,7 +289,8 @@ public class AwsConsoleInterface {
         } while (true);
 
         AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
-            chosenSpot.setUser_name(this.currUser.getName());
+        chosenSpot.setMax_price(chosenMaxPrice);
+        chosenSpot.setUser_name(this.currUser.getName());
 
         this.inventoryMapper.awsSpotDao().update(chosenSpot);
     }
