@@ -1,10 +1,7 @@
 package models.daos;
 
 import com.datastax.oss.driver.api.core.PagingIterable;
-import com.datastax.oss.driver.api.mapper.annotations.Dao;
-import com.datastax.oss.driver.api.mapper.annotations.Delete;
-import com.datastax.oss.driver.api.mapper.annotations.Insert;
-import com.datastax.oss.driver.api.mapper.annotations.Select;
+import com.datastax.oss.driver.api.mapper.annotations.*;
 import models.entities.AWSSpot;
 
 import java.math.BigDecimal;
@@ -14,10 +11,10 @@ import java.util.UUID;
 public interface AWSSpotDao {
 
     @Select
-    AWSSpot findByRegionAndAzNameAndInstanceType(String region, String az_name, String instance_type, UUID spot_id);
+    AWSSpot findByRegionAndAzNameAndInstanceTypeAndID(String region, String az_name, String instance_type, UUID spot_id);
 
     @Select
-    AWSSpot findByRegionAndAzNameAndInstanceTypeAndMaxPrice(String region, String az_name, String instance_type, UUID spot_id, BigDecimal max_price);
+    AWSSpot findByRegionAndAzNameAndInstanceAndIDTypeAndMaxPrice(String region, String az_name, String instance_type, UUID spot_id, BigDecimal max_price);
 
     @Select
     PagingIterable<AWSSpot> findAll();
@@ -27,5 +24,8 @@ public interface AWSSpotDao {
 
     @Delete
     void delete(AWSSpot awsSpot);
+
+    @Update
+    void update(AWSSpot awsSpot);
 
 }
