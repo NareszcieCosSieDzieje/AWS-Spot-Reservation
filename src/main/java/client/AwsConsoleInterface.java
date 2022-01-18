@@ -67,9 +67,9 @@ public class AwsConsoleInterface {
 
     private boolean handleUserLogin() {
         String username = null;
+        Scanner reader = new Scanner(System.in);
         do {
             System.out.print("Enter username: ");
-            Scanner reader = new Scanner(System.in);
             username = reader.nextLine().strip();
             if (username.isBlank()) {
                 System.out.println("Username cannot be empty ''");
