@@ -7,6 +7,7 @@ package connectors;
 //import com.datastax.driver.mapping.Mapper;
 //import com.datastax.driver.mapping.MappingManager;
 
+import client.security.SecurePassword;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.session.Session;
@@ -173,7 +174,7 @@ public class CassandraConnector {
             ec2InstanceDao.save(ec2Instance);
         }
 
-        ArrayList<Triplet<String, String, BigDecimal>> usersParams = new ArrayList(List.of(
+        ArrayList<Triplet<String, String, BigDecimal>> usersParamsInitial = new ArrayList(List.of(
                 new Triplet("Paul", "paulos123", new BigDecimal(1000)),
                 new Triplet("Chris", "chris!", new BigDecimal(1000)),
                 new Triplet("Adminos", "Maximos!@#", new BigDecimal(9999999)),
@@ -181,10 +182,23 @@ public class CassandraConnector {
                 new Triplet("Martha", "fl0W3r", new BigDecimal(780)),
                 new Triplet("Kate", "C0ff3#", new BigDecimal(2310))
         ));
-        for (Triplet<String, String, BigDecimal> userParams: usersParams) {
-            User user = new User(userParams.getValue0(),
-                    userParams.getValue1(),
-                    userParams.getValue2());
+
+        ArrayList<Quartet<String, String, String, BigDecimal>> userParams = new ArrayList<>();
+        for (Triplet<String, String, BigDecimal> userData: usersParamsInitial) {
+            String passwordData[] = SecurePassword.createSaltedHash(userData.getValue1());
+            userParams.add(new Quartet<String, String, String, BigDecimal>(
+                    userData.getValue0(),
+                    passwordData[1], // PASS
+                    passwordData[0], // SALT
+                    userData.getValue2()
+                    ));
+        }
+
+        for (Quartet<String, String, String, BigDecimal> userData: userParams) {
+            User user = new User(userData.getValue0(),
+                    userData.getValue1(),
+                    userData.getValue2(),
+                    userData.getValue3());
             userDao.save(user);
         }
 
