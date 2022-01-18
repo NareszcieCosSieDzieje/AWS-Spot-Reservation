@@ -155,18 +155,15 @@ public class AwsConsoleInterface {
 
     private void optionsMenu(String prompt) {
         PagingIterable<AZToEC2Mapping> azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().findAll();
-        HashSet<String> foundRegionsSet = new HashSet();
-        HashSet<String> foundAzsSet = new HashSet();
-        HashSet<String> foundInstanceTypesSet = new HashSet();
+        HashSet<String> foundRegionsSet = new HashSet<>();
+        HashSet<String> foundAzsSet = new HashSet<>();
+        HashSet<String> foundInstanceTypesSet = new HashSet<>();
         Spliterator<AZToEC2Mapping> azToEC2MappingSpliterator = azToEC2Mappings.spliterator();
         azToEC2MappingSpliterator.forEachRemaining( (item) -> {
             foundRegionsSet.add(item.getRegion());
             foundAzsSet.add(item.getAz_name());
             foundInstanceTypesSet.add(item.getInstance_type());
-//            System.out.println(item);
-        } );
-
-//        System.out.print(prompt);
+        });
 
         ArrayList<String> foundAzsList = new ArrayList<>(foundAzsSet);
         ArrayList<String> foundRegionsList = new ArrayList<>(foundRegionsSet);
@@ -210,7 +207,12 @@ public class AwsConsoleInterface {
 
         System.out.println("Chose the maximum price you are willing to pay for the Spot");
         System.out.println("Your credits: " + this.currUser.getCredits());
-        BigDecimal minPrice = new BigDecimal(0); // FIXME WHAT IS THE MIN PRICE! get from aztoec2mapping
+        // FIXME CO JAK JAKIS PARAMETR JEST PUSTY?
+        BigDecimal minPrice = this.inventoryMapper.azToEc2MappingDao().findByRegionAndInstanceTypeAndAzName(
+                chosenElements.get("region"),
+                chosenElements.get("az_name"),
+                chosenElements.get("instance_type")
+        ).getMin_price();
         BigDecimal maxPrice = this.currUser.getCredits(); // JEST Git taki max
         Scanner scanner = new Scanner(System.in);
         BigDecimal chosenMaxPrice = null;
@@ -231,15 +233,33 @@ public class AwsConsoleInterface {
             break;
         } while (true);
 
-        // FIXME: walidacja chosenElements zeby nie bylo pustych stringow?
+        // FIXME: walidacja chosenElements zeby nie bylo pustych stringow? aztoec2mapping -> min price
 
-        AWSSpot awsSpot = new AWSSpot(  chosenElements.get("region"),
-                                        chosenElements.get("az_name"),
-                                        chosenElements.get("instance_type"),
-                chosenMaxPrice,
-                                        this.currUser.getName());
+        ArrayList<AWSSpot> availableAWSSpotsForThePrice = new ArrayList<>();
+        PagingIterable<AWSSpot> foundAWSSpots = this.inventoryMapper.awsSpotDao().findAll();
+        Spliterator<AWSSpot> awsSpotsSpliterator = foundAWSSpots.spliterator();
+        awsSpotsSpliterator.forEachRemaining ( (item) -> {
+            if (item.getRegion() == chosenElements.get("region") &&
+                item.getAz_name() == chosenElements.get("az_name") &&
+                item.getInstance_type() == chosenElements.get("instance_type") &&
+                item.getMax_price() < chosenMaxPrice)
+            {
+                availableAWSSpotsForThePrice.add(item);
+            }
+        });
 
-        this.inventoryMapper.awsSpotDao().save(awsSpot);
+        // FIXME CO DALEJ!
+        if (availableAWSSpotsForThePrice.size() == 0) {
+            System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
+        } else {
+            AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
+            chosenSpot.setUser_name(this.currUser.getName());
+        }
+
+        availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice);
+        // TODO: DEBUG
+
+        this.inventoryMapper.awsSpotDao().update(awsSpot);
     }
 
     private void handleResponse(int response) {
