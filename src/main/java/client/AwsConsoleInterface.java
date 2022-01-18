@@ -66,9 +66,16 @@ public class AwsConsoleInterface {
     }
 
     private boolean handleUserLogin() {
-        System.out.print("Enter username: ");
-        Scanner reader = new Scanner(System.in);
-        String username = reader.nextLine().strip();
+        do {
+            System.out.print("Enter username: ");
+            Scanner reader = new Scanner(System.in);
+            String username = reader.nextLine().strip();
+            if (username.isBlank()) {
+                System.out.println("Username cannot be empty ''");
+                continue;
+            }
+            break;
+        } while (true);
 
         User user = inventoryMapper.userDao().find(username);
         if (user == null) {
