@@ -40,7 +40,6 @@ public class AWSSpot {
     @CqlName(value = "spot_id")
     private UUID spot_id;
 
-    @ClusteringColumn
     @CqlName(value = "max_price")
     private BigDecimal max_price;
 

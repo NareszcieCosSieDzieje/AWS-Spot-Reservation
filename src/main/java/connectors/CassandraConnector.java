@@ -119,8 +119,8 @@ public class CassandraConnector {
                 .withPartitionKey("az_name", DataTypes.TEXT)
                 .withPartitionKey("instance_type", DataTypes.ASCII)
                 .withPartitionKey("spot_id", DataTypes.UUID)
-                .withClusteringColumn("max_price", DataTypes.DECIMAL)
-                .withClusteringColumn("user_name", DataTypes.TEXT);
+                .withColumn("max_price", DataTypes.DECIMAL)
+                .withColumn("user_name", DataTypes.TEXT);
         session.execute(createTableSt.build());
 
         createTableSt = SchemaBuilder.createTable(keyspaceName, "az_to_ec2_mapping").ifNotExists()
@@ -221,24 +221,35 @@ public class CassandraConnector {
             azToEc2MappingDao.save(azToEC2Mapping);
         }
 
-        ArrayList<Quintet<String, String, String, BigDecimal, String>> awsSpotsParams = new ArrayList(List.of(
-                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-                new Quintet("us-east-1", "b", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-                new Quintet("us-east-2", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.029"), "Paul"),
-                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.030"), "Chris"),
-                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.045"), "Adminos")
-        ));
-        for (Quintet<String, String, String, BigDecimal, String> awsSpotParams: awsSpotsParams) {
-            AWSSpot awsSpot = new AWSSpot(awsSpotParams.getValue0(),
-                    awsSpotParams.getValue1(),
-                    awsSpotParams.getValue2(),
-                    awsSpotParams.getValue3(),
-                    awsSpotParams.getValue4());
-            awsSpotDao.save(awsSpot);
+        for (Sextet<String, String, String, BigDecimal, BigDecimal, Integer> azToEC2MappingParams: azToEC2MappingsParams) {
+            for (int i = 0; i < azToEC2MappingParams.getValue5(); i++) {
+                AWSSpot awsSpot = new AWSSpot(azToEC2MappingParams.getValue0(),
+                        azToEC2MappingParams.getValue2(),
+                        azToEC2MappingParams.getValue1(),
+                        azToEC2MappingParams.getValue3(),
+                        "");
+                awsSpotDao.save(awsSpot);
+            }
         }
+
+//        ArrayList<Quintet<String, String, String, BigDecimal, String>> awsSpotsParams = new ArrayList(List.of(
+//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+//                new Quintet("us-east-1", "b", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+//                new Quintet("us-east-2", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
+//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.029"), "Paul"),
+//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.030"), "Chris"),
+//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.045"), "Adminos")
+//        ));
+//        for (Quintet<String, String, String, BigDecimal, String> awsSpotParams: awsSpotsParams) {
+//            AWSSpot awsSpot = new AWSSpot(awsSpotParams.getValue0(),
+//                    awsSpotParams.getValue1(),
+//                    awsSpotParams.getValue2(),
+//                    awsSpotParams.getValue3(),
+//                    awsSpotParams.getValue4());
+//            awsSpotDao.save(awsSpot);
+//        }
 
         ArrayList<Triplet<String, String, AZStatus>> availabilityZonesParams = new ArrayList(List.of(
                 new Triplet("us-east-1", "a", AZStatus.UP),
