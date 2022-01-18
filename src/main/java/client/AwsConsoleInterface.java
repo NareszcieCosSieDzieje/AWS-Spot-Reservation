@@ -232,7 +232,8 @@ public class AwsConsoleInterface {
             Scanner scanner = new Scanner(System.in);
             BigDecimal chosenMaxPrice = null;
             do {
-                System.out.println("");
+                System.out.println("Choose your max price for the spot.");
+                System.out.println("Min price is " + minPrice);
                 try {
                     chosenMaxPrice = new BigDecimal(scanner.nextLine().strip());
                 } catch (NumberFormatException e) {
