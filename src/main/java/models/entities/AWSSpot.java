@@ -18,6 +18,7 @@ import com.datastax.oss.driver.api.mapper.annotations.Entity;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.UUID;
 
 @Entity(defaultKeyspace = "aws")
@@ -107,6 +108,14 @@ public class AWSSpot {
     public void setUser_name(String user_name) {
         this.user_name = user_name;
     }
+
+    public static Comparator<AWSSpot> sortByMaxPrice = new Comparator<AWSSpot>() {
+        @Override
+        public int compare(AWSSpot spot1, AWSSpot spot2) {
+            //sort in ascending order
+            return spot1.getMax_price().compareTo(spot2.getMax_price());
+        }
+    };
 
     @Override
     public String toString() {
