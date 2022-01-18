@@ -30,7 +30,7 @@ public class SecurePassword {
         if (hash != null) {
             return Base64.getEncoder().encodeToString(hash);
         } else {
-            return ""; // FIXME: XD
+            return "";
         }
     }
 

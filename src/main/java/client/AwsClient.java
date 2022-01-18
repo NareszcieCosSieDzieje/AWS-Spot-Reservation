@@ -18,22 +18,7 @@ import java.security.spec.InvalidKeySpecException;
 public class AwsClient {
 
     public static void main(String[] args) {
-
-
-        // TODO: DELETE THIS, THIS IS AN EXAMPLE HOW TO USE!
-//        String pass = "sekretnehaslo12345";
-//        String[] saltedHash = SecurePassword.createSaltedHash(pass);
-//        System.out.println("first hash " + saltedHash[0] + " " + saltedHash[1]);
-//        boolean res = SecurePassword.compareHashWithPassword(pass, saltedHash[0], saltedHash[1]);
-//        if (res) {
-//            System.out.println("All is ok");
-//        } else {
-//            System.out.println("No i nie dziala!");
-//        }
-//        return;
-        // TODO: DELETE UPPER
-
-        String message = null;
+        String message;
         boolean rebuild = false;
         if (args.length < 2) {
             message = "Missing arguments (node_ip) | (node_port)";

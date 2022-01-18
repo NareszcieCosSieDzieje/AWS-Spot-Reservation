@@ -3,21 +3,21 @@ package client;
 import client.security.SecurePassword;
 import com.datastax.oss.driver.api.core.PagingIterable;
 import models.daos.AWSSpotDao;
+import models.daos.AZToEc2MappingDao;
+import models.daos.Ec2InstanceDao;
 import models.entities.AWSSpot;
 import models.entities.AZToEC2Mapping;
+import models.entities.EC2Instance;
 import models.entities.User;
 import models.mappers.InventoryMapper;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class AwsConsoleInterface {
 
-    private InventoryMapper inventoryMapper;
+    private final InventoryMapper inventoryMapper;
     private final int EXIT_CODE = 0;
     private User currUser = null;
 
@@ -57,16 +57,16 @@ public class AwsConsoleInterface {
 
     private void printMenu() {
         System.out.printf("Logged in as: %s, Credits: %.2f%n", currUser.getName(), currUser.getCredits());
-        System.out.println("1. Reserve a spot"); // TODO: Update spots reserved table, check aztoec2mapping and dont allow to create spot if max_spots exceeded
-        System.out.println("2. Show reserved spots");
+        System.out.println("1. Reserve a spot"); // TODO: Increase spots reserved
+        System.out.println("2. Show your reserved spots");
         System.out.println("3. Show instance types");
         System.out.println("4. Run big traffic simulation");
-        System.out.println("5. Release reserved spot"); // TODO: Handle this, delete spot, decrease counter
+        System.out.println("5. Release reserved spot"); // TODO: Decrease counter
         System.out.println(EXIT_CODE + ". Exit");
     }
 
     private boolean handleUserLogin() {
-        String username = null;
+        String username;
         Scanner reader = new Scanner(System.in);
         do {
             System.out.print("Enter username: ");
@@ -119,10 +119,10 @@ public class AwsConsoleInterface {
         try {
             choice = Integer.parseInt(reader.nextLine().strip());
         } catch (NumberFormatException e) {
-            System.err.println("Choice invalid. Choice range [0, 4]");
+            System.err.println("Choice invalid. Choice range [0, 5]");
         }
-        if (choice < 0 || choice > 4) {
-            System.err.println("Choice invalid. Choice range [0, 4]");
+        if (choice < 0 || choice > 5) {
+            System.err.println("Choice invalid. Choice range [0, 5]");
         }
         return choice;
     }
@@ -131,10 +131,9 @@ public class AwsConsoleInterface {
         Scanner reader = new Scanner(System.in);
         int indexStart = 0;
         int indexEnd = selectionList.size() - 1;
-        int chosenIndex = -1;
-        final Runnable errorMessage = () -> {
-            System.out.println("Index must be a valid integer! The accepted range is [" + indexStart + ", " + indexEnd + "]");
-        };
+        int chosenIndex;
+        final Runnable errorMessage = () ->
+                System.out.println("Index must be a valid integer! The accepted range is [" + indexStart + ", " + indexEnd + "]");
         System.out.println("Press 'X' to exit");
         do {
             System.out.println(loopText);
@@ -143,7 +142,7 @@ public class AwsConsoleInterface {
                 if (input.equals("X")) {
                     return null;
                 }
-                chosenIndex = Integer.parseInt(reader.nextLine().strip());
+                chosenIndex = Integer.parseInt(input);
             } catch(NumberFormatException e) {
                 errorMessage.run();
                 continue;
@@ -156,9 +155,9 @@ public class AwsConsoleInterface {
         } while (true);
     }
 
-    private void optionsMenu(String prompt) {
+    private void optionsMenu() {
         ArrayList<AWSSpot> availableAWSSpotsForThePrice = new ArrayList<>();
-        BigDecimal chosenMaxPrice = null;
+        BigDecimal chosenMaxPrice;
         // inicjalizacja moze byc na zewnatrz bo reset tylko jak lista pusta
         do {
             PagingIterable<AZToEC2Mapping> azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().findAll();
@@ -193,7 +192,7 @@ public class AwsConsoleInterface {
                     "az_name", "",
                     "instance_type", ""));
 
-            for (List<String> list : listOfLists) {
+            for (ArrayList<String> list : listOfLists) {
                 int listIndex = listOfLists.indexOf(list);
                 if (listIndex < 0) {
                     System.err.println("Error getting the list index!");
@@ -207,29 +206,24 @@ public class AwsConsoleInterface {
                     System.out.println(idx + ". " + elem);
                     idx += 1;
                 }
-                String chosenItem = this.getSelectedItem(foundRegionsList, listPromptMap.get(listIndex));
+                String chosenItem = this.getSelectedItem(list, listPromptMap.get(listIndex));
                 String chosenElemKey = listIndexToKeyMapping.get(listIndex);
-                if (chosenItem == null) {
-                    chosenElements.put(chosenElemKey, "");
-                } else {
-                    chosenElements.put(chosenElemKey, chosenItem);
-                }
+                chosenElements.put(chosenElemKey, Objects.requireNonNullElse(chosenItem, ""));
             }
 
             System.out.println("Chose the maximum price you are willing to pay for the Spot");
             System.out.println("Your credits: " + this.currUser.getCredits());
-            // FIXME CO JAK JAKIS PARAMETR JEST PUSTY?
 
             AZToEC2Mapping azToEC2Mapping = this.inventoryMapper.azToEc2MappingDao().findByRegionAndInstanceTypeAndAzName(
                     chosenElements.get("region"),
-                    chosenElements.get("az_name"),
-                    chosenElements.get("instance_type"));
-            BigDecimal minPrice = new BigDecimal("0.2"); // FIXME! ?
+                    chosenElements.get("instance_type"),
+                    chosenElements.get("az_name"));
+            BigDecimal minPrice = new BigDecimal("0.2");
             if (azToEC2Mapping != null) {
                 minPrice = azToEC2Mapping.getMin_price();
             }
 
-            BigDecimal maxPrice = this.currUser.getCredits(); // TODO: czy JEST Git taki max
+            BigDecimal maxPrice = this.currUser.getCredits();
             Scanner scanner = new Scanner(System.in);
             do {
                 System.out.println("Choose your max price for the spot.");
@@ -256,15 +250,21 @@ public class AwsConsoleInterface {
                 if (item.getRegion().equals(chosenElements.get("region")) &&
                         item.getAz_name().equals(chosenElements.get("az_name")) &&
                         item.getInstance_type().equals(chosenElements.get("instance_type")) &&
-                        item.getMax_price().compareTo(finalChosenMaxPrice) == -1) {
+                        item.getMax_price().compareTo(finalChosenMaxPrice) == -1 &&
+                        !item.getUser_name().equals("")) {
+                    availableAWSSpotsForThePrice.add(item);
+                }
+                if (item.getRegion().equals(chosenElements.get("region")) &&
+                        item.getAz_name().equals(chosenElements.get("az_name")) &&
+                        item.getInstance_type().equals(chosenElements.get("instance_type")) &&
+                        item.getMax_price().compareTo(finalChosenMaxPrice) == 0 &&
+                        item.getUser_name().equals("")) {
                     availableAWSSpotsForThePrice.add(item);
                 }
             });
 
-            availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice);
-            // TODO: DEBUG
+            availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice); // TODO: Debug
 
-            boolean startOver = false;
             if (availableAWSSpotsForThePrice.size() == 0) {
                 System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
                 Scanner reader = new Scanner(System.in);
@@ -274,16 +274,13 @@ public class AwsConsoleInterface {
                     String input = reader.nextLine().strip();
                     if (input.isBlank()) {
                         System.out.println("Starting over.\n");
-                        startOver = true;
                         break;
                     } else if (input.equals("X")) {
                         System.out.println("Exiting.");
                         return;
                     }
                 } while (true);
-                if (startOver) {
-                    continue;
-                }
+                continue;
             }
             break;
         } while (true);
@@ -298,12 +295,11 @@ public class AwsConsoleInterface {
     }
 
     private void releaseSpot(ArrayList<AWSSpot> reservedSpots ) {
-        // TODO: PRINT ALL RESERVED SPOTS
+        printSpots(reservedSpots, true);
         Scanner scanner = new Scanner(System.in);
         int maxIndex = reservedSpots.size() - 1;
-        int chosenSpotID = -1;
+        int chosenSpotID;
         do {
-            // TODO: print spots by number
             System.out.println("Chose your number for the spot to be released");
             System.out.println("Press 'X' to exit");
             try {
@@ -312,7 +308,7 @@ public class AwsConsoleInterface {
                     System.out.println("Exiting.");
                     return;
                 }
-                chosenSpotID = Integer.parseInt(scanner.nextLine().strip());
+                chosenSpotID = Integer.parseInt(input);
             } catch (NumberFormatException e) {
                 System.out.println("Provided number was not valid.");
                 System.out.println("Accepting values from range: [" + 0 + ", " + maxIndex + "]");
@@ -327,66 +323,137 @@ public class AwsConsoleInterface {
         } while (true);
         AWSSpot spotToBeReleased = reservedSpots.get(chosenSpotID);
         spotToBeReleased.setUser_name("");
-        spotToBeReleased.setMax_price(new BigDecimal("0.2f")); //FIXME CZY TO OK?
+        AZToEC2Mapping azToEC2Mapping = this.inventoryMapper.azToEc2MappingDao()
+                 .findByRegionAndInstanceTypeAndAzName(
+                         spotToBeReleased.getRegion(),
+                         spotToBeReleased.getInstance_type(),
+                         spotToBeReleased.getAz_name());
+        spotToBeReleased.setMax_price(new BigDecimal("0.2"));
+        if (azToEC2Mapping != null) {
+            spotToBeReleased.setMax_price(azToEC2Mapping.getMin_price());
+        }
         this.inventoryMapper.awsSpotDao().update(spotToBeReleased);
         System.out.println("Successfully released spot no.: " + chosenSpotID);
-        // TODO: PRINT ALL RESERVED SPOTS
+        printSpots(reservedSpots, true);
+    }
+
+    private void startTrafficSimulation() {
+        System.out.println("Enter number of iterations or -1 for infinite loop: ");
+        Scanner scanner = new Scanner(System.in);
+        int iterCount;
+        try {
+            iterCount = Integer.parseInt(scanner.nextLine().strip());
+        } catch (NumberFormatException numberFormatException) {
+            System.out.println("Error parsing iteration count. Defaulting to 1000 iterations.");
+            iterCount = 1000;
+        }
+
+        AWSSpotDao awsSpotDao = inventoryMapper.awsSpotDao();
+        PagingIterable<AWSSpot> awsSpots = awsSpotDao.findAll();
+
+        ArrayList<String> userNames = new ArrayList<>(List.of("Test1", "Test2", "Test3"));
+        Random random = new Random();
+        List<AWSSpot> allSpots = awsSpots.all();
+        System.out.print("Simulation in progress");
+        for (int i = 0; i < iterCount || iterCount == -1; i++) {
+            AWSSpot randomSpot = allSpots.get(random.nextInt(allSpots.size()));
+            if (random.nextBoolean()) {
+                randomSpot.setMax_price(BigDecimal.valueOf(random.nextFloat(100F)));
+                randomSpot.setUser_name(userNames.get(random.nextInt(userNames.size())));
+                awsSpotDao.update(randomSpot);
+            } else {
+                AZToEc2MappingDao azToEc2MappingDao = inventoryMapper.azToEc2MappingDao();
+                AZToEC2Mapping azToEC2Mapping = azToEc2MappingDao.findByRegionAndInstanceTypeAndAzName(randomSpot.getRegion(), randomSpot.getInstance_type(), randomSpot.getAz_name());
+                randomSpot.setMax_price(azToEC2Mapping.getMin_price());
+                randomSpot.setUser_name("");
+                awsSpotDao.update(randomSpot);
+            }
+            if (i % 100 == 0 && i % 400 != 0 && i != 0) {
+                System.out.print(".");
+            }
+            if (i % 400 == 0 && i != 0) {
+                System.out.print("\b\b\b   \b\b\b");
+            }
+        }
+        System.out.println();
+        awsSpots = awsSpotDao.findAll();
+        printSpots((ArrayList<AWSSpot>) awsSpots.all(), false);
+    }
+
+    private void printInstanceTypes() {
+        Ec2InstanceDao ec2InstanceDao = inventoryMapper.ec2InstanceDao();
+        PagingIterable<EC2Instance> ec2Instances = ec2InstanceDao.findAll();
+        System.out.println("Instance Type | Instance Family | CPU Cores | Memory Size | Network Performance");
+        System.out.println("------------- | --------------- | --------- | ----------- | -------------------");
+        ec2Instances.forEach((instance) -> System.out.printf("%13s | %15s | %9d | %11d | %19s\n",
+                instance.getInstance_type(),
+                instance.getFamily(),
+                instance.getVcpu_cores(),
+                instance.getMemory_size(),
+                instance.getNetwork_performance()));
     }
 
     private void handleResponse(int response) {
-        System.out.println("Your choice was: " + response);
-
-        // TODO: GET USER AND ID
         if (response == 1) {
-            /* TODO:
-            * PRINT SPOTS with stats?
-            * again get choice?
-            * reserve the spot, or multiple?
-            * */
-            optionsMenu("Reserving a new spot...");
+            optionsMenu();
         } else if (response == 2) {
-            // show spots belonging to the user
-            ArrayList<AWSSpot> awsSpots = inventoryMapper.awsSpotDao().findAll().all().stream().filter(
-                    (awsSpot) ->
-                            awsSpot.getUser_name().equals(currUser.getName())
-            ).collect(Collectors.toCollection(ArrayList::new));
-            System.out.printf("Reserved spots: \n");
-            for(int i = 0; i < awsSpots.size(); i++) {
-                System.out.printf(i + ". " + awsSpots.get(i) + "\n");
-            }
+            showYourReservedSpots();
         } else if (response == 3) {
-            // TODO: print instance types? kindof DONE get code from options menu
+            printInstanceTypes();
         } else if (response == 4) {
-            // TODO: simulation? IMPORTANT
-            // TODO: if spot_count = max then cheapest one changes user_name and max_price
+            startTrafficSimulation();
+            // TODO: simulation - debug?
         } else if (response == 5) {
-            // TODO: Handle this, delete spot, decrease counter
-            ArrayList<AWSSpot> reservedSpots = new ArrayList<>();
-            Spliterator<AWSSpot> awsSpotSpliterator = this.inventoryMapper.awsSpotDao().findAll().spliterator();
+            handleReleaseSpot();
+        }
+    }
 
-            awsSpotSpliterator.forEachRemaining((item) -> {
-                if (item.getUser_name().equals(this.currUser.getName())) {
-                    reservedSpots.add(item);
-                }
-            });
-            if (reservedSpots.size() == 0) {
-                System.out.println("No reserved spots to release! Exiting.");
-            } else {
-                releaseSpot(reservedSpots);
+    private void handleReleaseSpot() {
+        ArrayList<AWSSpot> reservedSpots = new ArrayList<>();
+        Spliterator<AWSSpot> awsSpotSpliterator = this.inventoryMapper.awsSpotDao().findAll().spliterator();
+
+        awsSpotSpliterator.forEachRemaining((item) -> {
+            if (item.getUser_name().equals(this.currUser.getName())) {
+                reservedSpots.add(item);
             }
+        });
+        if (reservedSpots.size() == 0) {
+            System.out.println("No reserved spots to release! Exiting.");
+        } else {
+            releaseSpot(reservedSpots);
         }
     }
 
-    private void reserveSpot(String region, String instance_type, String az_name) {
-        AZToEC2Mapping azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().
-                findByRegionAndInstanceTypeAndAzName(region, instance_type, az_name);
+    private void showYourReservedSpots() {
+        ArrayList<AWSSpot> awsSpots = inventoryMapper.awsSpotDao().findAll().all().stream().filter(
+                (awsSpot) ->
+                        awsSpot.getUser_name().equals(currUser.getName())
+        ).collect(Collectors.toCollection(ArrayList::new));
+        printSpots(awsSpots, false);
     }
 
-    private void showSpots() {
-        PagingIterable<AWSSpot> awsSpots = this.inventoryMapper.awsSpotDao().findAll();
+    private void printSpots(ArrayList<AWSSpot> awsSpots, boolean printNumber) {
+        if (printNumber) {
+            System.out.print(" Number | ");
+        }
+        System.out.println("        Region | AZ Name | Instance Type |                              Spot ID | Max Price |      User Name");
+        if (printNumber) {
+            System.out.print(" ------ | ");
+        }
+        System.out.println("-------------- | ------- | ------------- | ------------------------------------ | --------- | --------------");
+        int i = 0;
         for (AWSSpot awsSpot: awsSpots) {
-            System.out.println("spot: " + awsSpot.toString());
+            if (printNumber) {
+                System.out.printf(" %5d. | ", i);
+                i++;
+            }
+            System.out.printf("%14s | %7s | %13s | %36s | %9.4f | %14s\n",
+                    awsSpot.getRegion(),
+                    awsSpot.getAz_name(),
+                    awsSpot.getInstance_type(),
+                    awsSpot.getSpot_id().toString(),
+                    awsSpot.getMax_price(),
+                    awsSpot.getUser_name());
         }
     }
-
 }

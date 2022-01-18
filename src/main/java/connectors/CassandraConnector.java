@@ -1,12 +1,5 @@
 package connectors;
 
-
-//import com.datastax.driver.core.Cluster;
-//import com.datastax.driver.core.CodecRegistry;
-//import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
-//import com.datastax.driver.mapping.Mapper;
-//import com.datastax.driver.mapping.MappingManager;
-
 import client.security.SecurePassword;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
@@ -30,6 +23,7 @@ import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CassandraConnector {
 
@@ -40,7 +34,7 @@ public class CassandraConnector {
     public CassandraConnector() { }
 
     public void connect(String node, Integer port) {
-        File config = new File(getClass().getClassLoader().getResource("datastax-java-driver.conf").getFile());
+        File config = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("datastax-java-driver.conf")).getFile());
 
         this.session = CqlSession.builder().addContactPoint(new InetSocketAddress(node, port))
                 .withLocalDatacenter("Mars")
@@ -186,12 +180,10 @@ public class CassandraConnector {
                         1,
                         1,
                         1,
-                        5,
                         1,
                         2,
                         2,
                         2,
-                        5,
                         2
                 )
         );
@@ -222,6 +214,8 @@ public class CassandraConnector {
             )
         );
 
+        // FIXME: klucz główny to dwa pola więc tylko po nich for loop, reszta parametrów nie wiem
+        // FiXme: W sumie to lepiej zrobić ten iloczyn dla aztoec2mappingu(3 pola w kluczu) a ec2instances cofnąć z poprzedniego commita
         ArrayList<Quintet<String, String, Integer, Integer, String>> ec2InstancesParams = new ArrayList<>();
         for (String instaceType: instaceTypesList) {
             for (String family: familyList) {
@@ -245,19 +239,19 @@ public class CassandraConnector {
             ec2InstanceDao.save(ec2Instance);
         }
 
-        ArrayList<Triplet<String, String, BigDecimal>> usersParamsInitial = new ArrayList(List.of(
-                new Triplet("Paul", "paulos123", new BigDecimal(1000)),
-                new Triplet("Chris", "chris!", new BigDecimal(1000)),
-                new Triplet("Adminos", "Maximos!@#", new BigDecimal(9999999)),
-                new Triplet("JeffB", "Amazong", new BigDecimal(999999)),
-                new Triplet("Martha", "fl0W3r", new BigDecimal(780)),
-                new Triplet("Kate", "C0ff3#", new BigDecimal(2310))
+        ArrayList<Triplet<String, String, BigDecimal>> usersParamsInitial = new ArrayList<>(List.of(
+                new Triplet<>("Paul", "paulos123", new BigDecimal(1000)),
+                new Triplet<>("Chris", "chris!", new BigDecimal(1000)),
+                new Triplet<>("Adminos", "Maximos!@#", new BigDecimal(9999999)),
+                new Triplet<>("JeffB", "Amazong", new BigDecimal(999999)),
+                new Triplet<>("Martha", "fl0W3r", new BigDecimal(780)),
+                new Triplet<>("Kate", "C0ff3#", new BigDecimal(2310))
         ));
 
         ArrayList<Quartet<String, String, String, BigDecimal>> userParams = new ArrayList<>();
         for (Triplet<String, String, BigDecimal> userData: usersParamsInitial) {
-            String passwordData[] = SecurePassword.createSaltedHash(userData.getValue1());
-            userParams.add(new Quartet<String, String, String, BigDecimal>(
+            String[] passwordData = SecurePassword.createSaltedHash(userData.getValue1());
+            userParams.add(new Quartet<>(
                     userData.getValue0(),
                     passwordData[1], // PASS
                     passwordData[0], // SALT
@@ -274,13 +268,13 @@ public class CassandraConnector {
         }
 
         // TODO: Probably should be filled with every instance type for every region and az combo
-        ArrayList<Sextet<String, String, String, BigDecimal, BigDecimal, Integer>> azToEC2MappingsParams = new ArrayList(List.of(
-                new Sextet("us-east-1", "t2.micro", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
-                new Sextet("us-east-1", "t2.nano", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
-                new Sextet("us-east-2", "t2.medium", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 10),
-                new Sextet("eu-central-1", "t2.small", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
-                new Sextet("eu-central-1", "t2.micro", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
-                new Sextet("eu-west-1", "t3.nano", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30)
+        ArrayList<Sextet<String, String, String, BigDecimal, BigDecimal, Integer>> azToEC2MappingsParams = new ArrayList<>(List.of(
+                new Sextet<>("us-east-1", "t2.micro", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
+                new Sextet<>("us-east-1", "t2.nano", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
+                new Sextet<>("us-east-2", "t2.medium", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 10),
+                new Sextet<>("eu-central-1", "t2.small", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
+                new Sextet<>("eu-central-1", "t2.micro", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
+                new Sextet<>("eu-west-1", "t3.nano", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30)
         ));
         for (Sextet<String, String, String, BigDecimal, BigDecimal, Integer> azToEC2MappingParams: azToEC2MappingsParams) {
             AZToEC2Mapping azToEC2Mapping = new AZToEC2Mapping(azToEC2MappingParams.getValue0(),
@@ -303,32 +297,13 @@ public class CassandraConnector {
             }
         }
 
-//        ArrayList<Quintet<String, String, String, BigDecimal, String>> awsSpotsParams = new ArrayList(List.of(
-//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-//                new Quintet("us-east-1", "b", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-//                new Quintet("us-east-2", "a", "t2.micro", new BigDecimal("0.035"), "JeffB"),
-//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.029"), "Paul"),
-//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.030"), "Chris"),
-//                new Quintet("us-east-1", "a", "t2.micro", new BigDecimal("0.045"), "Adminos")
-//        ));
-//        for (Quintet<String, String, String, BigDecimal, String> awsSpotParams: awsSpotsParams) {
-//            AWSSpot awsSpot = new AWSSpot(awsSpotParams.getValue0(),
-//                    awsSpotParams.getValue1(),
-//                    awsSpotParams.getValue2(),
-//                    awsSpotParams.getValue3(),
-//                    awsSpotParams.getValue4());
-//            awsSpotDao.save(awsSpot);
-//        }
-
-        ArrayList<Triplet<String, String, AZStatus>> availabilityZonesParams = new ArrayList(List.of(
-                new Triplet("us-east-1", "a", AZStatus.UP),
-                new Triplet("us-east-1", "b", AZStatus.UP),
-                new Triplet("us-east-2", "a", AZStatus.UP),
-                new Triplet("eu-central-1", "a", AZStatus.UP),
-                new Triplet("eu-central-1", "b", AZStatus.UP),
-                new Triplet("eu-west-1", "a", AZStatus.DOWN)
+        ArrayList<Triplet<String, String, AZStatus>> availabilityZonesParams = new ArrayList<>(List.of(
+                new Triplet<>("us-east-1", "a", AZStatus.UP),
+                new Triplet<>("us-east-1", "b", AZStatus.UP),
+                new Triplet<>("us-east-2", "a", AZStatus.UP),
+                new Triplet<>("eu-central-1", "a", AZStatus.UP),
+                new Triplet<>("eu-central-1", "b", AZStatus.UP),
+                new Triplet<>("eu-west-1", "a", AZStatus.DOWN)
         ));
         for (Triplet<String, String, AZStatus> availabilityZoneParams: availabilityZonesParams) {
             AvailabilityZone availabilityZone = new AvailabilityZone(availabilityZoneParams.getValue0(),
@@ -337,22 +312,13 @@ public class CassandraConnector {
             availabilityZoneDao.save(availabilityZone);
         }
 
-        ArrayList<Quartet<String, String, String, Long>> SpotsReservationsParams = new ArrayList(List.of(
-                new Quartet("us-east-1", "t2.micro", "a", 5L),
-                new Quartet("us-east-1", "t2.micro", "b", 1L),
-                new Quartet("us-east-2", "t2.micro", "a", 1L)
-        ));
-        for (Quartet<String, String, String, Long> spotsReservationParams: SpotsReservationsParams) {
-            spotsReservedDao.increment(spotsReservationParams.getValue0(),
-                    spotsReservationParams.getValue1(),
-                    spotsReservationParams.getValue2(),
-                    spotsReservationParams.getValue3());
+        for (Sextet<String, String, String, BigDecimal, BigDecimal, Integer> azToEC2MappingParams: azToEC2MappingsParams) {
+            for (int i = 0; i < azToEC2MappingParams.getValue5(); i++) {
+                spotsReservedDao.increment(azToEC2MappingParams.getValue0(),
+                        azToEC2MappingParams.getValue1(),
+                        azToEC2MappingParams.getValue2(),
+                        0L);
+            }
         }
     }
-
-    /*
-     * ascii      boolean    decimal    float      int        set        time       tinyint    varint
-     * bigint     counter    double     frozen     list       smallint   timestamp  uuid
-     * blob       date       duration   inet       map        text       timeuuid   varchar
-     */
 }

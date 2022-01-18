@@ -12,7 +12,6 @@ public interface AvailabilityZoneDao {
     @Select
     AvailabilityZone findByRegion(String region);
 
-    // FIXME: CZY TO ZADZIALA?
     @Select
     AvailabilityZone findByRegionAndName(String region, String name);
 
