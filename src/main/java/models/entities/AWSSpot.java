@@ -111,8 +111,12 @@ public class AWSSpot {
     public static Comparator<AWSSpot> sortByMaxPrice = new Comparator<AWSSpot>() {
         @Override
         public int compare(AWSSpot spot1, AWSSpot spot2) {
-            //sort in ascending order
-            return spot1.getMax_price().compareTo(spot2.getMax_price());
+            //sort in ascending order max_price first then user_name
+            int priceComp = spot1.getMax_price().compareTo(spot2.getMax_price());
+            if (priceComp != 0) {
+                return priceComp;
+            }
+            return spot1.getUser_name().compareTo(spot2.getUser_name());
         }
     };
 
