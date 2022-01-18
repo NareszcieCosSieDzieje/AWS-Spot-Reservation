@@ -238,28 +238,28 @@ public class AwsConsoleInterface {
         ArrayList<AWSSpot> availableAWSSpotsForThePrice = new ArrayList<>();
         PagingIterable<AWSSpot> foundAWSSpots = this.inventoryMapper.awsSpotDao().findAll();
         Spliterator<AWSSpot> awsSpotsSpliterator = foundAWSSpots.spliterator();
+        BigDecimal finalChosenMaxPrice = chosenMaxPrice;
         awsSpotsSpliterator.forEachRemaining ( (item) -> {
-            if (item.getRegion() == chosenElements.get("region") &&
-                item.getAz_name() == chosenElements.get("az_name") &&
-                item.getInstance_type() == chosenElements.get("instance_type") &&
-                item.getMax_price() < chosenMaxPrice)
+            if (item.getRegion().equals(chosenElements.get("region")) &&
+                item.getAz_name().equals(chosenElements.get("az_name")) &&
+                item.getInstance_type().equals(chosenElements.get("instance_type")) &&
+                item.getMax_price().compareTo(finalChosenMaxPrice) == -1)
             {
                 availableAWSSpotsForThePrice.add(item);
             }
         });
 
-        // FIXME CO DALEJ!
-        if (availableAWSSpotsForThePrice.size() == 0) {
-            System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
-        } else {
-            AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
-            chosenSpot.setUser_name(this.currUser.getName());
-        }
-
         availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice);
         // TODO: DEBUG
 
-        this.inventoryMapper.awsSpotDao().update(awsSpot);
+        // FIXME CO DALEJ!
+        if (availableAWSSpotsForThePrice.size() == 0) {
+            System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
+        }
+        AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
+            chosenSpot.setUser_name(this.currUser.getName());
+
+        this.inventoryMapper.awsSpotDao().update(chosenSpot);
     }
 
     private void handleResponse(int response) {
