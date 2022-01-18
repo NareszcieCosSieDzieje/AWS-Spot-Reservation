@@ -135,11 +135,14 @@ public class AwsConsoleInterface {
         final Runnable errorMessage = () -> {
             System.out.println("Index must be a valid integer! The accepted range is [" + indexStart + ", " + indexEnd + "]");
         };
-
-        // TODO: leaving the function with 'X' or smth NOT IMPORTANT
+        System.out.println("Press 'X' to exit");
         do {
             System.out.println(loopText);
             try {
+                String input = reader.nextLine().strip();
+                if (input.equals("X")) {
+                    return null;
+                }
                 chosenIndex = Integer.parseInt(reader.nextLine().strip());
             } catch(NumberFormatException e) {
                 errorMessage.run();
@@ -154,108 +157,136 @@ public class AwsConsoleInterface {
     }
 
     private void optionsMenu(String prompt) {
-        PagingIterable<AZToEC2Mapping> azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().findAll();
-        HashSet<String> foundRegionsSet = new HashSet<>();
-        HashSet<String> foundAzsSet = new HashSet<>();
-        HashSet<String> foundInstanceTypesSet = new HashSet<>();
-        Spliterator<AZToEC2Mapping> azToEC2MappingSpliterator = azToEC2Mappings.spliterator();
-        azToEC2MappingSpliterator.forEachRemaining( (item) -> {
-            foundRegionsSet.add(item.getRegion());
-            foundAzsSet.add(item.getAz_name());
-            foundInstanceTypesSet.add(item.getInstance_type());
-        });
-
-        ArrayList<String> foundAzsList = new ArrayList<>(foundAzsSet);
-        ArrayList<String> foundRegionsList = new ArrayList<>(foundRegionsSet);
-        ArrayList<String> foundInstanceTypesList = new ArrayList<>(foundInstanceTypesSet);
-
-        ArrayList<ArrayList<String>> listOfLists = new ArrayList<>(Arrays.asList(foundRegionsList, foundAzsList, foundInstanceTypesList));
-        HashMap<Integer, String> listPromptMap = new HashMap<>(Map.of(
-                0, "Choose region",
-                1, "Choose availability zone",
-                2, "Choose instance type"));
-
-        HashMap<Integer, String> listIndexToKeyMapping = new HashMap<>(Map.of(
-                0, "region",
-                1, "az_name",
-                2, "instance_type"));
-
-
-        HashMap<String, String> chosenElements = new HashMap<>(Map.of(
-                "region", "",
-                "az_name", "",
-                "instance_type", ""));
-
-        for(List<String> list: listOfLists) {
-            int listIndex = listOfLists.indexOf(list);
-            if (listIndex < 0) {
-                System.err.println("Error getting the list index!");
-            }
-            int idx = 0;
-            if (list.size() == 0) {
-                System.out.println("List of: " + listIndexToKeyMapping.get(listIndex) + " is empty.");
-                continue;
-            }
-            for (String elem: list) {
-                System.out.println(idx + ". " + elem);
-                idx += 1;
-            }
-            String chosenItem = this.getSelectedItem(foundRegionsList, listPromptMap.get(listIndex));
-            String chosenElemKey = listIndexToKeyMapping.get(listIndex);
-            chosenElements.put(chosenElemKey, chosenItem);
-        }
-
-        System.out.println("Chose the maximum price you are willing to pay for the Spot");
-        System.out.println("Your credits: " + this.currUser.getCredits());
-        // FIXME CO JAK JAKIS PARAMETR JEST PUSTY?
-        BigDecimal minPrice = this.inventoryMapper.azToEc2MappingDao().findByRegionAndInstanceTypeAndAzName(
-                chosenElements.get("region"),
-                chosenElements.get("az_name"),
-                chosenElements.get("instance_type")
-        ).getMin_price();
-        BigDecimal maxPrice = this.currUser.getCredits(); // JEST Git taki max
-        Scanner scanner = new Scanner(System.in);
-        BigDecimal chosenMaxPrice = null;
+        ArrayList<AWSSpot> availableAWSSpotsForThePrice = new ArrayList<>();
+        // inicjalizacja moze byc na zewnatrz bo reset tylko jak lista pusta
         do {
-            System.out.println("");
-            try {
-                chosenMaxPrice = new BigDecimal(scanner.nextLine().strip());
-            } catch (NumberFormatException e) {
-                System.out.println("Provided number was not valid.");
-                System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "}");
-                continue;
+            PagingIterable<AZToEC2Mapping> azToEC2Mappings = this.inventoryMapper.azToEc2MappingDao().findAll();
+            HashSet<String> foundRegionsSet = new HashSet<>();
+            HashSet<String> foundAzsSet = new HashSet<>();
+            HashSet<String> foundInstanceTypesSet = new HashSet<>();
+            Spliterator<AZToEC2Mapping> azToEC2MappingSpliterator = azToEC2Mappings.spliterator();
+            azToEC2MappingSpliterator.forEachRemaining((item) -> {
+                foundRegionsSet.add(item.getRegion());
+                foundAzsSet.add(item.getAz_name());
+                foundInstanceTypesSet.add(item.getInstance_type());
+            });
+
+            ArrayList<String> foundAzsList = new ArrayList<>(foundAzsSet);
+            ArrayList<String> foundRegionsList = new ArrayList<>(foundRegionsSet);
+            ArrayList<String> foundInstanceTypesList = new ArrayList<>(foundInstanceTypesSet);
+
+            ArrayList<ArrayList<String>> listOfLists = new ArrayList<>(Arrays.asList(foundRegionsList, foundAzsList, foundInstanceTypesList));
+            HashMap<Integer, String> listPromptMap = new HashMap<>(Map.of(
+                    0, "Choose region",
+                    1, "Choose availability zone",
+                    2, "Choose instance type"));
+
+            HashMap<Integer, String> listIndexToKeyMapping = new HashMap<>(Map.of(
+                    0, "region",
+                    1, "az_name",
+                    2, "instance_type"));
+
+
+            HashMap<String, String> chosenElements = new HashMap<>(Map.of(
+                    "region", "",
+                    "az_name", "",
+                    "instance_type", ""));
+
+            for (List<String> list : listOfLists) {
+                int listIndex = listOfLists.indexOf(list);
+                if (listIndex < 0) {
+                    System.err.println("Error getting the list index!");
+                }
+                int idx = 0;
+                if (list.size() == 0) {
+                    System.out.println("List of: " + listIndexToKeyMapping.get(listIndex) + " is empty.");
+                    continue;
+                }
+                for (String elem : list) {
+                    System.out.println(idx + ". " + elem);
+                    idx += 1;
+                }
+                String chosenItem = this.getSelectedItem(foundRegionsList, listPromptMap.get(listIndex));
+                String chosenElemKey = listIndexToKeyMapping.get(listIndex);
+                if (chosenItem == null) {
+                    chosenElements.put(chosenElemKey, "");
+                } else {
+                    chosenElements.put(chosenElemKey, chosenItem);
+                }
             }
-            if (chosenMaxPrice.compareTo(minPrice) == -1 || chosenMaxPrice.compareTo(maxPrice) == 1) {
-                System.out.println("Provided number was not valid.");
-                System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "}");
-                continue;
+
+            System.out.println("Chose the maximum price you are willing to pay for the Spot");
+            System.out.println("Your credits: " + this.currUser.getCredits());
+            // FIXME CO JAK JAKIS PARAMETR JEST PUSTY?
+
+            AZToEC2Mapping azToEC2Mapping = this.inventoryMapper.azToEc2MappingDao().findByRegionAndInstanceTypeAndAzName(
+                    chosenElements.get("region"),
+                    chosenElements.get("az_name"),
+                    chosenElements.get("instance_type"));
+            BigDecimal minPrice = new BigDecimal("0.2"); // FIXME! ?
+            if (azToEC2Mapping != null) {
+                minPrice = azToEC2Mapping.getMin_price();
+            }
+
+            BigDecimal maxPrice = this.currUser.getCredits(); // TODO: czy JEST Git taki max
+            Scanner scanner = new Scanner(System.in);
+            BigDecimal chosenMaxPrice = null;
+            do {
+                System.out.println("");
+                try {
+                    chosenMaxPrice = new BigDecimal(scanner.nextLine().strip());
+                } catch (NumberFormatException e) {
+                    System.out.println("Provided number was not valid.");
+                    System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "}");
+                    continue;
+                }
+                if (chosenMaxPrice.compareTo(minPrice) == -1 || chosenMaxPrice.compareTo(maxPrice) == 1) {
+                    System.out.println("Provided number was not valid.");
+                    System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "}");
+                    continue;
+                }
+                break;
+            } while (true);
+
+            PagingIterable<AWSSpot> foundAWSSpots = this.inventoryMapper.awsSpotDao().findAll();
+            Spliterator<AWSSpot> awsSpotsSpliterator = foundAWSSpots.spliterator();
+            BigDecimal finalChosenMaxPrice = chosenMaxPrice;
+            awsSpotsSpliterator.forEachRemaining((item) -> {
+                if (item.getRegion().equals(chosenElements.get("region")) &&
+                        item.getAz_name().equals(chosenElements.get("az_name")) &&
+                        item.getInstance_type().equals(chosenElements.get("instance_type")) &&
+                        item.getMax_price().compareTo(finalChosenMaxPrice) == -1) {
+                    availableAWSSpotsForThePrice.add(item);
+                }
+            });
+
+            availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice);
+            // TODO: DEBUG
+
+            boolean startOver = false;
+            if (availableAWSSpotsForThePrice.size() == 0) {
+                System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
+                Scanner reader = new Scanner(System.in);
+                do {
+                    System.out.println("Press enter to start over.");
+                    System.out.println("Press 'X' to exit.");
+                    String input = reader.nextLine().strip();
+                    if (input.isBlank()) {
+                        System.out.println("Starting over.\n");
+                        startOver = true;
+                        break;
+                    } else if (input.equals("X")) {
+                        System.out.println("Exiting.");
+                        return;
+                    }
+                } while (true);
+                if (startOver) {
+                    continue;
+                }
             }
             break;
         } while (true);
 
-        // FIXME: walidacja chosenElements zeby nie bylo pustych stringow? aztoec2mapping -> min price
-
-        ArrayList<AWSSpot> availableAWSSpotsForThePrice = new ArrayList<>();
-        PagingIterable<AWSSpot> foundAWSSpots = this.inventoryMapper.awsSpotDao().findAll();
-        Spliterator<AWSSpot> awsSpotsSpliterator = foundAWSSpots.spliterator();
-        BigDecimal finalChosenMaxPrice = chosenMaxPrice;
-        awsSpotsSpliterator.forEachRemaining ( (item) -> {
-            if (item.getRegion().equals(chosenElements.get("region")) &&
-                item.getAz_name().equals(chosenElements.get("az_name")) &&
-                item.getInstance_type().equals(chosenElements.get("instance_type")) &&
-                item.getMax_price().compareTo(finalChosenMaxPrice) == -1)
-            {
-                availableAWSSpotsForThePrice.add(item);
-            }
-        });
-
-        availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice);
-        // TODO: DEBUG
-
-        // FIXME CO DALEJ!
-        if (availableAWSSpotsForThePrice.size() == 0) {
-            System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
-        }
         AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
             chosenSpot.setUser_name(this.currUser.getName());
 
