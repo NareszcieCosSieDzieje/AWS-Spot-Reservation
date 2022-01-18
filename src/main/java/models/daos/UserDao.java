@@ -1,10 +1,7 @@
 package models.daos;
 
 import com.datastax.oss.driver.api.core.PagingIterable;
-import com.datastax.oss.driver.api.mapper.annotations.Dao;
-import com.datastax.oss.driver.api.mapper.annotations.Delete;
-import com.datastax.oss.driver.api.mapper.annotations.Insert;
-import com.datastax.oss.driver.api.mapper.annotations.Select;
+import com.datastax.oss.driver.api.mapper.annotations.*;
 import models.entities.User;
 
 @Dao
@@ -18,6 +15,9 @@ public interface UserDao {
 
     @Insert
     void save(User user);
+
+    @Update
+    void update(User user);
 
     @Delete
     void delete(User user);

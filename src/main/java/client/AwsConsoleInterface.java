@@ -293,6 +293,7 @@ public class AwsConsoleInterface {
         chosenSpot.setUser_name(this.currUser.getName());
         this.currUser.setCredits(this.currUser.getCredits().subtract(chosenMaxPrice));
 
+        this.inventoryMapper.userDao().update(this.currUser);
         this.inventoryMapper.awsSpotDao().update(chosenSpot);
     }
 
