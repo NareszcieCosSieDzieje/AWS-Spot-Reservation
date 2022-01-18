@@ -238,12 +238,12 @@ public class AwsConsoleInterface {
                     chosenMaxPrice = new BigDecimal(scanner.nextLine().strip());
                 } catch (NumberFormatException e) {
                     System.out.println("Provided number was not valid.");
-                    System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "}");
+                    System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "]");
                     continue;
                 }
                 if (chosenMaxPrice.compareTo(minPrice) == -1 || chosenMaxPrice.compareTo(maxPrice) == 1) {
                     System.out.println("Provided number was not valid.");
-                    System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "}");
+                    System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "]");
                     continue;
                 }
                 break;
@@ -296,6 +296,42 @@ public class AwsConsoleInterface {
         this.inventoryMapper.awsSpotDao().update(chosenSpot);
     }
 
+    private void releaseSpot(ArrayList<AWSSpot> reservedSpots ) {
+        // TODO: PRINT ALL RESERVED SPOTS
+        Scanner scanner = new Scanner(System.in);
+        int maxIndex = reservedSpots.size() - 1;
+        int chosenSpotID = -1;
+        do {
+            // TODO: print spots by number
+            System.out.println("Chose your number for the spot to be released");
+            System.out.println("Press 'X' to exit");
+            try {
+                String input = scanner.nextLine().strip();
+                if (input.equals("X")) {
+                    System.out.println("Exiting.");
+                    return;
+                }
+                chosenSpotID = Integer.parseInt(scanner.nextLine().strip());
+            } catch (NumberFormatException e) {
+                System.out.println("Provided number was not valid.");
+                System.out.println("Accepting values from range: [" + 0 + ", " + maxIndex + "]");
+                continue;
+            }
+            if (chosenSpotID < 0 || chosenSpotID > maxIndex) {
+                System.out.println("Provided number was not valid.");
+                System.out.println("Accepting values from range: [" + 0 + ", " + maxIndex + "]");
+                continue;
+            }
+            break;
+        } while (true);
+        AWSSpot spotToBeReleased = reservedSpots.get(chosenSpotID);
+        spotToBeReleased.setUser_name("");
+        spotToBeReleased.setMax_price(new BigDecimal("0.2f")); //FIXME CZY TO OK?
+        this.inventoryMapper.awsSpotDao().update(spotToBeReleased);
+        System.out.println("Successfully released spot no.: " + chosenSpotID);
+        // TODO: PRINT ALL RESERVED SPOTS
+    }
+
     private void handleResponse(int response) {
         System.out.println("Your choice was: " + response);
 
@@ -322,6 +358,21 @@ public class AwsConsoleInterface {
         } else if (response == 4) {
             // TODO: simulation? IMPORTANT
             // TODO: if spot_count = max then cheapest one changes user_name and max_price
+        } else if (response == 5) {
+            // TODO: Handle this, delete spot, decrease counter
+            ArrayList<AWSSpot> reservedSpots = new ArrayList<>();
+            Spliterator<AWSSpot> awsSpotSpliterator = this.inventoryMapper.awsSpotDao().findAll().spliterator();
+
+            awsSpotSpliterator.forEachRemaining((item) -> {
+                if (item.getUser_name().equals(this.currUser.getName())) {
+                    reservedSpots.add(item);
+                }
+            });
+            if (reservedSpots.size() == 0) {
+                System.out.println("No reserved spots to release! Exiting.");
+            } else {
+                releaseSpot(reservedSpots);
+            }
         }
     }
 
