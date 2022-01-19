@@ -2,6 +2,7 @@ package client;
 
 import client.security.SecurePassword;
 import com.datastax.oss.driver.api.core.PagingIterable;
+import jnr.ffi.Struct;
 import models.daos.AWSSpotDao;
 import models.daos.AZToEc2MappingDao;
 import models.daos.Ec2InstanceDao;
@@ -501,29 +502,44 @@ public class AwsConsoleInterface implements Runnable {
         printSpots(awsSpots, false);
     }
 
-    private void printSpots(ArrayList<AWSSpot> awsSpots, boolean printNumber) {
+    private String getSpots(ArrayList<AWSSpot> awsSpots, boolean printNumber) {
+        StringBuilder logText = new StringBuilder();
         if (printNumber) {
-            System.out.print(" Number | ");
+//            System.out.print(" Number | ");
+            logText.append(" Number | \n");
         }
-        System.out.println("        Region | AZ Name | Instance Type |                              Spot ID | Max Price |      User Name");
+        logText.append("        Region | AZ Name | Instance Type |                              Spot ID | Max Price |      User Name\n");
+//        System.out.println("        Region | AZ Name | Instance Type |                              Spot ID | Max Price |      User Name");
         if (printNumber) {
-            System.out.print(" ------ | ");
+            logText.append(" ------ | \n");
+//            System.out.print(" ------ | ");
         }
-        System.out.println("-------------- | ------- | ------------- | ------------------------------------ | --------- | --------------");
+        logText.append("-------------- | ------- | ------------- | ------------------------------------ | --------- | --------------\n");
+//        System.out.println("-------------- | ------- | ------------- | ------------------------------------ | --------- | --------------");
         int i = 0;
         for (AWSSpot awsSpot: awsSpots) {
             if (printNumber) {
-                System.out.printf(" %5d. | ", i);
+                logText.append(String.format(" %5d. | \n", i));
+//                System.out.printf(" %5d. | ", i);
                 i++;
             }
-            System.out.printf("%14s | %7s | %13s | %36s | %9.4f | %14s\n",
+//            System.out.printf("%14s | %7s | %13s | %36s | %9.4f | %14s\n",
+//                    awsSpot.getRegion(),
+//                    awsSpot.getAz_name(),
+//                    awsSpot.getInstance_type(),
+//                    awsSpot.getSpot_id().toString(),
+//                    awsSpot.getMax_price(),
+//                    awsSpot.getUser_name());
+
+            logText.append(String.format("%14s | %7s | %13s | %36s | %9.4f | %14s\n",
                     awsSpot.getRegion(),
                     awsSpot.getAz_name(),
                     awsSpot.getInstance_type(),
                     awsSpot.getSpot_id().toString(),
                     awsSpot.getMax_price(),
-                    awsSpot.getUser_name());
+                    awsSpot.getUser_name()));
         }
+        return logText.toString();
     }
 
     @Override
