@@ -11,6 +11,9 @@ import models.entities.EC2Instance;
 import models.entities.User;
 import models.mappers.InventoryMapper;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -23,6 +26,7 @@ public class AwsConsoleInterface implements Runnable {
     private int iterCount;
     private final int EXIT_CODE = 0;
     private User currUser = null;
+    private File logsDir;
 
     public AwsConsoleInterface(InventoryMapper inventoryMapper) {
         this.inventoryMapper = inventoryMapper;
@@ -370,7 +374,7 @@ public class AwsConsoleInterface implements Runnable {
         ArrayList<String> userNames = new ArrayList<>(List.of("Test1", "Test2", "Test3"));
         Random random = new Random();
         List<AWSSpot> allSpots = awsSpots.all();
-        System.out.print("Simulation in progress");
+        System.out.print("[" + Thread.currentThread().getId() + "] simulation in progress\n");
         for (int i = 0; i < iterCount || iterCount == -1; i++) {
             AWSSpot randomSpot = allSpots.get(random.nextInt(allSpots.size()));
             if (random.nextBoolean()) {
@@ -383,6 +387,18 @@ public class AwsConsoleInterface implements Runnable {
                 randomSpot.setMax_price(azToEC2Mapping.getMin_price());
                 randomSpot.setUser_name("");
                 awsSpotDao.update(randomSpot);
+            }
+            if (i % 1000 == 0) {
+                String logPath = Thread.currentThread().getId() + "_" + "log_" + i + ".txt";
+                File logFile = new File(this.logsDir, logPath);
+                try {
+                    logFile.createNewFile();
+                    FileWriter myWriter = new FileWriter(logPath);
+                    myWriter.write(""); //FIXME
+                    myWriter.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             if (i % 100 == 0 && i % 400 != 0 && i != 0) {
                 System.out.print(".");
@@ -513,6 +529,8 @@ public class AwsConsoleInterface implements Runnable {
     @Override
     public void run() {
         //  System.out.println(Thread.currentThread().getName()+" (Start) message = "+message);
+        this.logsDir = new File("logs");
+        logsDir.mkdirs();
         startTrafficSimulation(this.iterCount);
     }
 }
