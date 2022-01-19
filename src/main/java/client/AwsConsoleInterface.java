@@ -13,16 +13,25 @@ import models.mappers.InventoryMapper;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public class AwsConsoleInterface {
+public class AwsConsoleInterface implements Runnable {
 
     private final InventoryMapper inventoryMapper;
+    private int iterCount;
     private final int EXIT_CODE = 0;
     private User currUser = null;
 
     public AwsConsoleInterface(InventoryMapper inventoryMapper) {
         this.inventoryMapper = inventoryMapper;
+    }
+
+    // RUNNABLE VERSION
+    public AwsConsoleInterface(InventoryMapper inventoryMapper, int iterCount) {
+        this.inventoryMapper = inventoryMapper;
+        this.iterCount = iterCount;
     }
 
     public void startLoop() {
@@ -354,17 +363,7 @@ public class AwsConsoleInterface {
         printSpots(reservedSpots, true);
     }
 
-    private void startTrafficSimulation() {
-        System.out.println("Enter number of iterations or -1 for infinite loop: ");
-        Scanner scanner = new Scanner(System.in);
-        int iterCount;
-        try {
-            iterCount = Integer.parseInt(scanner.nextLine().strip());
-        } catch (NumberFormatException numberFormatException) {
-            System.out.println("Error parsing iteration count. Defaulting to 1000 iterations.");
-            iterCount = 1000;
-        }
-
+    private void startTrafficSimulation(int iterCount) {
         AWSSpotDao awsSpotDao = inventoryMapper.awsSpotDao();
         PagingIterable<AWSSpot> awsSpots = awsSpotDao.findAll();
 
@@ -418,8 +417,45 @@ public class AwsConsoleInterface {
         } else if (response == 3) {
             printInstanceTypes();
         } else if (response == 4) {
-            startTrafficSimulation();
-            // TODO: simulation - debug?
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Enter the number of Threads ([0, 5]) initialized: ");
+            String input;
+            int threadNum;
+            do {
+                 input = scanner.nextLine().trim().strip();
+                 try {
+                     threadNum = Integer.parseInt(input);
+                 } catch (NumberFormatException e) {
+                     System.err.println("The given thread number is not a positive integer.");
+                     System.err.println("Try again.");
+                     continue;
+                 }
+                 if (threadNum < 0 || threadNum > 5) {
+                     System.err.println("The given thread number is not a positive integer.");
+                     System.err.println("Try again.");
+                     continue;
+                 }
+                 break;
+            }
+            while(true);
+            System.out.println("Enter number of iterations or -1 for infinite loop: ");
+            int iterCount;
+            try {
+                iterCount = Integer.parseInt(scanner.nextLine().strip());
+            } catch (NumberFormatException numberFormatException) {
+                System.out.println("Error parsing iteration count. Defaulting to 1000 iterations.");
+                iterCount = 1000;
+            }
+
+            ExecutorService executor = Executors.newFixedThreadPool(threadNum);
+            for (int i = 0; i < threadNum; i++) {
+                Runnable worker = new AwsConsoleInterface(this.inventoryMapper, iterCount);
+                executor.execute(worker);
+            }
+            executor.shutdown();
+            while (!executor.isTerminated()) {
+                // FIXME CO TUTAJ?
+            }
         } else if (response == 5) {
             handleReleaseSpot();
         }
@@ -472,5 +508,11 @@ public class AwsConsoleInterface {
                     awsSpot.getMax_price(),
                     awsSpot.getUser_name());
         }
+    }
+
+    @Override
+    public void run() {
+        //  System.out.println(Thread.currentThread().getName()+" (Start) message = "+message);
+        startTrafficSimulation(this.iterCount);
     }
 }
