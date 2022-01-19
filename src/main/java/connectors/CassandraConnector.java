@@ -222,7 +222,7 @@ public class CassandraConnector {
                 for (Integer vcpuCores: vcpuCoresList) {
                     for (Integer memorySize: memorySizeList) {
                         for (String networkPerformance: networkPerformanceList) {
-                            ec2InstancesParams.add(new Quintet<>(instaceType, family, vcpuCores, memorySize, networkPerformance));
+                            ec2InstancesParams.add(new Quintet(instaceType, family, vcpuCores, memorySize, networkPerformance));
                         }
                     }
                 }
