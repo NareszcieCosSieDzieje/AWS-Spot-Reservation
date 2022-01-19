@@ -235,7 +235,7 @@ public class AwsConsoleInterface {
                     System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "]");
                     continue;
                 }
-                if (chosenMaxPrice.compareTo(minPrice) == -1 || chosenMaxPrice.compareTo(maxPrice) == 1) {
+                if (chosenMaxPrice.compareTo(minPrice) < 0 || chosenMaxPrice.compareTo(maxPrice) > 0) {
                     System.out.println("Provided number was not valid.");
                     System.out.println("Accepting values from range: [" + minPrice + ", " + maxPrice + "]");
                     continue;
@@ -250,7 +250,7 @@ public class AwsConsoleInterface {
                 if (item.getRegion().equals(chosenElements.get("region")) &&
                         item.getAz_name().equals(chosenElements.get("az_name")) &&
                         item.getInstance_type().equals(chosenElements.get("instance_type")) &&
-                        item.getMax_price().compareTo(finalChosenMaxPrice) == -1 &&
+                        item.getMax_price().compareTo(finalChosenMaxPrice) < 0 &&
                         !item.getUser_name().equals("")) {
                     availableAWSSpotsForThePrice.add(item);
                 }
@@ -286,6 +286,15 @@ public class AwsConsoleInterface {
         } while (true);
 
         AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
+        if (!chosenSpot.getUser_name().equals("")) {
+            this.inventoryMapper.spotsReservedDao().increment(
+                    chosenSpot.getRegion(),
+                    chosenSpot.getInstance_type(),
+                    chosenSpot.getAz_name(),
+                    1
+            );
+        }
+
         chosenSpot.setMax_price(chosenMaxPrice);
         chosenSpot.setUser_name(this.currUser.getName());
         this.currUser.setCredits(this.currUser.getCredits().subtract(chosenMaxPrice));
@@ -333,6 +342,14 @@ public class AwsConsoleInterface {
             spotToBeReleased.setMax_price(azToEC2Mapping.getMin_price());
         }
         this.inventoryMapper.awsSpotDao().update(spotToBeReleased);
+        if (!spotToBeReleased.getUser_name().equals("")) {
+            this.inventoryMapper.spotsReservedDao().increment(
+                    spotToBeReleased.getRegion(),
+                    spotToBeReleased.getInstance_type(),
+                    spotToBeReleased.getAz_name(),
+                    -1
+            );
+        }
         System.out.println("Successfully released spot no.: " + chosenSpotID);
         printSpots(reservedSpots, true);
     }
