@@ -1,25 +1,13 @@
 package client;
 
-import client.security.SecurePassword;
 import connectors.CassandraConnector;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-
-/*
-* AWS CLIENT Steps ->
-* 1. Connect to db.
-* while True:
-*   2. Show available spots
-*   3. Choose a spot
-*   4.
-* */
 
 public class AwsClient {
 
     public static void main(String[] args) {
         String message;
         boolean rebuild = false;
+        boolean clean = false;
         if (args.length < 2) {
             message = "Missing arguments (node_ip) | (node_port)";
             System.out.println(message);
@@ -29,9 +17,10 @@ public class AwsClient {
             if (args[2].equals("rebuild")) {
                 rebuild = true;
             }
+            else if (args[2].equals("clean")) {
+                clean = true;
+            }
         }
-
-        // TODO: ogarnąć quorum cassandrowe (gdzie ustawiać, jak działa itp.)
 
         CassandraConnector cassandraConnector = new CassandraConnector();
         cassandraConnector.connect(args[0], Integer.parseInt(args[1]));
@@ -39,32 +28,12 @@ public class AwsClient {
             cassandraConnector.createKeyspace("aws3", "SimpleStrategy", 2);
             cassandraConnector.rebuildDatabase("aws3");
             cassandraConnector.insertSampleData();
+        } else if (clean) {
+            cassandraConnector.dropDatabase("aws3");
         }
 
         new AwsConsoleInterface(cassandraConnector.getInventoryMapper()).startLoop();
 
         cassandraConnector.close();
-//        InventoryMapper inventoryMapper = cassandraConnector.getInventoryMapper();
-//        Ec2InstanceDao ec2InstanceDao = inventoryMapper.ec2InstanceDao();
-//        ec2InstanceDao.save(new EC2Instance("t.big", "enterprise", 8, 4, "super-fast"));
-//        PagingIterable<EC2Instance> ec2instances = ec2InstanceDao.findAll();
-//        for (EC2Instance ec2instance: ec2instances) {
-//            System.out.println("my new sweet ec2 instance: " + ec2instance.toString());
-//        }
-//
-//        AWSSpotDao awsSpotDao = inventoryMapper.awsSpotDao();
-//        PagingIterable<AWSSpot> spots = awsSpotDao.findAll();
-//        System.out.println(spots.one().toString());
-//
-//        System.out.println("Done");
-//        cassandraConnector.createKeyspace("aws", "SimpleStrategy", 2);
-//        cassandraConnector.initCleanDatabase("aws");
-////        cassandraConnector.close();
-//        Session session = cassandraConnector.getSession();
-////        for (Row r: session.execute("SELECT * FROM test.mytable")) {
-////            System.out.println(r.toString());
-////        };
-//        System.out.println(session);
-//        cassandraConnector.close();
     }
 }

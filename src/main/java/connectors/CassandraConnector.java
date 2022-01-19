@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 public class CassandraConnector {
 
@@ -196,23 +197,46 @@ public class CassandraConnector {
             userDao.save(user);
         }
 
-        // TODO: Probably should be filled with every instance type for every region and az combo
-        ArrayList<Sextet<String, String, String, BigDecimal, BigDecimal, Integer>> azToEC2MappingsParams = new ArrayList<>(List.of(
-                new Sextet<>("us-east-1", "t2.micro", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
-                new Sextet<>("us-east-1", "t2.nano", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
-                new Sextet<>("us-east-2", "t2.medium", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 10),
-                new Sextet<>("eu-central-1", "t2.small", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 20),
-                new Sextet<>("eu-central-1", "t2.micro", "b", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30),
-                new Sextet<>("eu-west-1", "t3.nano", "a", new BigDecimal("0.0001"), new BigDecimal("0.0001"), 30)
+        ArrayList<String> regions = new ArrayList<>(List.of(
+                "us-east-1",
+                "us-east-2",
+                "eu-central-1",
+                "eu-west-1",
+                "eu-west-2"
         ));
-        for (Sextet<String, String, String, BigDecimal, BigDecimal, Integer> azToEC2MappingParams: azToEC2MappingsParams) {
-            AZToEC2Mapping azToEC2Mapping = new AZToEC2Mapping(azToEC2MappingParams.getValue0(),
-                    azToEC2MappingParams.getValue1(),
-                    azToEC2MappingParams.getValue2(),
-                    azToEC2MappingParams.getValue3(),
-                    azToEC2MappingParams.getValue4(),
-                    azToEC2MappingParams.getValue5());
-            azToEc2MappingDao.save(azToEC2Mapping);
+        ArrayList<String> azNames = new ArrayList<>(List.of(
+                "a",
+                "b",
+                "c"
+        ));
+        ArrayList<Integer> sizes = new ArrayList<>(List.of(
+                10,
+                20,
+                30
+        ));
+        Random random = new Random();
+
+        ArrayList<Sextet<String, String, String, BigDecimal, BigDecimal, Integer>> azToEC2MappingsParams = new ArrayList<>();
+        for (String region: regions) {
+            for (Quintet<String, String, Integer, Integer, String> ec2InstanceParams : ec2InstancesParams) {
+                for (String azName : azNames) {
+                    AZToEC2Mapping azToEC2Mapping = new AZToEC2Mapping(
+                            region,
+                            ec2InstanceParams.getValue0(),
+                            azName,
+                            new BigDecimal("0.0001"),
+                            new BigDecimal("0.0001"),
+                            sizes.get(random.nextInt(sizes.size())));
+                    azToEc2MappingDao.save(azToEC2Mapping);
+                    azToEC2MappingsParams.add(new Sextet<>(
+                            azToEC2Mapping.getRegion(),
+                            azToEC2Mapping.getInstance_type(),
+                            azToEC2Mapping.getAz_name(),
+                            azToEC2Mapping.getMin_price(),
+                            azToEC2Mapping.getCurrent_price(),
+                            azToEC2Mapping.getMax_spots_available()));
+                }
+            }
         }
 
         for (Sextet<String, String, String, BigDecimal, BigDecimal, Integer> azToEC2MappingParams: azToEC2MappingsParams) {

@@ -137,6 +137,7 @@ fabric.properties
 
 # Docker compose files
 docker_cassandra/data
+docker_cassandra_4/data
 
 # Compiled classes
 target

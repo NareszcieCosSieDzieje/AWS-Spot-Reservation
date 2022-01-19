@@ -2,10 +2,10 @@ package client;
 
 import client.security.SecurePassword;
 import com.datastax.oss.driver.api.core.PagingIterable;
-import jnr.ffi.Struct;
 import models.daos.AWSSpotDao;
 import models.daos.AZToEc2MappingDao;
 import models.daos.Ec2InstanceDao;
+import models.daos.SpotsReservedDao;
 import models.entities.AWSSpot;
 import models.entities.AZToEC2Mapping;
 import models.entities.EC2Instance;
@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class AwsConsoleInterface implements Runnable {
@@ -71,11 +72,11 @@ public class AwsConsoleInterface implements Runnable {
 
     private void printMenu() {
         System.out.printf("Logged in as: %s, Credits: %.2f%n", currUser.getName(), currUser.getCredits());
-        System.out.println("1. Reserve a spot"); // TODO: Increase spots reserved
+        System.out.println("1. Reserve a spot");
         System.out.println("2. Show your reserved spots");
         System.out.println("3. Show instance types");
         System.out.println("4. Run big traffic simulation");
-        System.out.println("5. Release reserved spot"); // TODO: Decrease counter
+        System.out.println("5. Release reserved spot");
         System.out.println(EXIT_CODE + ". Exit");
     }
 
@@ -268,16 +269,16 @@ public class AwsConsoleInterface implements Runnable {
                         !item.getUser_name().equals("")) {
                     availableAWSSpotsForThePrice.add(item);
                 }
-                if (item.getRegion().equals(chosenElements.get("region")) &&
+                else if (item.getRegion().equals(chosenElements.get("region")) &&
                         item.getAz_name().equals(chosenElements.get("az_name")) &&
                         item.getInstance_type().equals(chosenElements.get("instance_type")) &&
-                        item.getMax_price().compareTo(finalChosenMaxPrice) == 0 &&
+                        item.getMax_price().compareTo(finalChosenMaxPrice) <= 0 &&
                         item.getUser_name().equals("")) {
                     availableAWSSpotsForThePrice.add(item);
                 }
             });
 
-            availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice); // TODO: Debug
+            availableAWSSpotsForThePrice.sort(AWSSpot.sortByMaxPrice);
 
             if (availableAWSSpotsForThePrice.size() == 0) {
                 System.out.println("No AWSSpots available for the price: " + chosenMaxPrice);
@@ -300,7 +301,7 @@ public class AwsConsoleInterface implements Runnable {
         } while (true);
 
         AWSSpot chosenSpot = availableAWSSpotsForThePrice.get(0);
-        if (!chosenSpot.getUser_name().equals("")) {
+        if (chosenSpot.getUser_name().equals("")) {
             this.inventoryMapper.spotsReservedDao().increment(
                     chosenSpot.getRegion(),
                     chosenSpot.getInstance_type(),
@@ -370,6 +371,7 @@ public class AwsConsoleInterface implements Runnable {
 
     private void startTrafficSimulation(int iterCount) {
         AWSSpotDao awsSpotDao = inventoryMapper.awsSpotDao();
+        SpotsReservedDao spotsReservedDao = inventoryMapper.spotsReservedDao();
         PagingIterable<AWSSpot> awsSpots = awsSpotDao.findAll();
 
         ArrayList<String> userNames = new ArrayList<>(List.of("Test1", "Test2", "Test3"));
@@ -378,25 +380,30 @@ public class AwsConsoleInterface implements Runnable {
         System.out.print("[" + Thread.currentThread().getId() + "] simulation in progress\n");
         for (int i = 0; i < iterCount || iterCount == -1; i++) {
             AWSSpot randomSpot = allSpots.get(random.nextInt(allSpots.size()));
-            if (random.nextBoolean()) {
+            String oldUserName = randomSpot.getUser_name();
+            if (random.nextBoolean()) { // reserve
                 randomSpot.setMax_price(BigDecimal.valueOf(random.nextFloat(100F)));
                 randomSpot.setUser_name(userNames.get(random.nextInt(userNames.size())));
                 awsSpotDao.update(randomSpot);
-            } else {
+                if (oldUserName.equals(""))
+                    spotsReservedDao.increment(randomSpot.getRegion(), randomSpot.getInstance_type(), randomSpot.getAz_name(), 1);
+            } else { // release
                 AZToEc2MappingDao azToEc2MappingDao = inventoryMapper.azToEc2MappingDao();
                 AZToEC2Mapping azToEC2Mapping = azToEc2MappingDao.findByRegionAndInstanceTypeAndAzName(randomSpot.getRegion(), randomSpot.getInstance_type(), randomSpot.getAz_name());
                 randomSpot.setMax_price(azToEC2Mapping.getMin_price());
                 randomSpot.setUser_name("");
                 awsSpotDao.update(randomSpot);
+                if (!oldUserName.equals(""))
+                    spotsReservedDao.increment(randomSpot.getRegion(), randomSpot.getInstance_type(), randomSpot.getAz_name(), -1);
             }
             if (i % 1000 == 0) {
                 String logPath = Thread.currentThread().getId() + "_" + "log_" + i + ".txt";
                 File logFile = new File(this.logsDir, logPath);
                 try {
                     logFile.createNewFile();
-                    FileWriter myWriter = new FileWriter(logPath);
+                    FileWriter myWriter = new FileWriter(logFile.getPath());
                     awsSpots = awsSpotDao.findAll();
-                    myWriter.write(getSpots((ArrayList<AWSSpot>) awsSpots.all(), false)); //FIXME
+                    myWriter.write(getSpots((ArrayList<AWSSpot>) awsSpots.all(), false));
                     myWriter.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -410,8 +417,6 @@ public class AwsConsoleInterface implements Runnable {
             }
         }
         System.out.println();
-        awsSpots = awsSpotDao.findAll();
-        printSpots((ArrayList<AWSSpot>) awsSpots.all(), false);
     }
 
     private void printInstanceTypes() {
@@ -465,6 +470,7 @@ public class AwsConsoleInterface implements Runnable {
                 iterCount = 1000;
             }
 
+            System.out.println("Simulation started");
             ExecutorService executor = Executors.newFixedThreadPool(threadNum);
             for (int i = 0; i < threadNum; i++) {
                 Runnable worker = new AwsConsoleInterface(this.inventoryMapper, iterCount);
@@ -472,7 +478,12 @@ public class AwsConsoleInterface implements Runnable {
             }
             executor.shutdown();
             while (!executor.isTerminated()) {
-                // FIXME CO TUTAJ?
+                try {
+                    if (executor.awaitTermination(1000, TimeUnit.MILLISECONDS))
+                        System.out.println("Simulation ended");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         } else if (response == 5) {
             handleReleaseSpot();
@@ -531,17 +542,17 @@ public class AwsConsoleInterface implements Runnable {
     private String getSpots(ArrayList<AWSSpot> awsSpots, boolean printNumber) {
         StringBuilder logText = new StringBuilder();
         if (printNumber) {
-            logText.append(" Number | \n");
+            logText.append(" Number | ");
         }
         logText.append("        Region | AZ Name | Instance Type |                              Spot ID | Max Price |      User Name\n");
         if (printNumber) {
-            logText.append(" ------ | \n");
+            logText.append(" ------ | ");
         }
         logText.append("-------------- | ------- | ------------- | ------------------------------------ | --------- | --------------\n");
         int i = 0;
         for (AWSSpot awsSpot: awsSpots) {
             if (printNumber) {
-                logText.append(String.format(" %5d. | \n", i));
+                logText.append(String.format(" %5d. | ", i));
                 i++;
             }
 
