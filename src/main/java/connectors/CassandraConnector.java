@@ -149,87 +149,16 @@ public class CassandraConnector {
         AvailabilityZoneDao availabilityZoneDao = this.mappingManager.availabilityZoneDao();
         SpotsReservedDao spotsReservedDao = this.mappingManager.spotsReservedDao();
 
-        ArrayList<String> instaceTypesList = new ArrayList<>(
-                List.of(
-                        "t1.micro",
-                        "t2.micro",
-                        "t2.nano",
-                        "t2.small",
-                        "t2.medium",
-                        "t2.large",
-                        "t3.nano",
-                        "t3.micro"
-                )
-        );
-
-        ArrayList<String> familyList = new ArrayList<>(
-                List.of(
-                        "t1",
-                        "t2",
-                        "t2",
-                        "t2",
-                        "t2",
-                        "t2",
-                        "t3",
-                        "t3"
-                )
-        );
-
-        ArrayList<Integer> vcpuCoresList = new ArrayList<>(
-                List.of(
-                        1,
-                        1,
-                        1,
-                        1,
-                        2,
-                        2,
-                        2,
-                        2
-                )
-        );
-
-        ArrayList<Integer> memorySizeList = new ArrayList<>(
-                List.of(
-                        626,
-                        1024,
-                        512,
-                        2048,
-                        4096,
-                        8192,
-                        512,
-                        1024
-                        )
-        );
-
-        ArrayList<String> networkPerformanceList = new ArrayList<>(
-                List.of(
-                    "Very Low",
-                    "Low to moderate",
-                    "Low to moderate",
-                    "Low to moderate",
-                    "Low to moderate",
-                    "Low to moderate",
-                    "Up to 5 Gigabit",
-                    "Up to 5 Gigabit"
-            )
-        );
-
-        // FIXME: klucz główny to dwa pola więc tylko po nich for loop, reszta parametrów nie wiem
-        // FiXme: W sumie to lepiej zrobić ten iloczyn dla aztoec2mappingu(3 pola w kluczu) a ec2instances cofnąć z poprzedniego commita
-        ArrayList<Quintet<String, String, Integer, Integer, String>> ec2InstancesParams = new ArrayList<>();
-        for (String instaceType: instaceTypesList) {
-            for (String family: familyList) {
-                for (Integer vcpuCores: vcpuCoresList) {
-                    for (Integer memorySize: memorySizeList) {
-                        for (String networkPerformance: networkPerformanceList) {
-                            ec2InstancesParams.add(new Quintet(instaceType, family, vcpuCores, memorySize, networkPerformance));
-                        }
-                    }
-                }
-            }
-        }
-
-
+        ArrayList<Quintet<String, String, Integer, Integer, String>> ec2InstancesParams = new ArrayList(List.of(
+                new Quintet<>("t1.micro", "t1", 1, 626, "Very Low"),
+                new Quintet<>("t2.micro", "t2", 1, 1024, "Low to moderate"),
+                new Quintet<>("t2.nano", "t2", 1, 512, "Low to moderate"),
+                new Quintet<>("t2.small", "t2", 1, 2048, "Low to moderate"),
+                new Quintet<>("t2.medium", "t2", 2, 4096, "Low to moderate"),
+                new Quintet<>("t2.large", "t2", 2, 8192, "Low to moderate"),
+                new Quintet<>("t3.nano", "t3", 2, 512, "Up to 5 Gigabit"),
+                new Quintet<>("t3.micro", "t3", 2, 1024, "Up to 5 Gigabit")
+        ));
         for (Quintet<String, String, Integer, Integer, String> ec2InstanceParams: ec2InstancesParams) {
             EC2Instance ec2Instance = new EC2Instance(ec2InstanceParams.getValue0(),
                     ec2InstanceParams.getValue1(),
